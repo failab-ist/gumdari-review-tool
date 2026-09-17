@@ -1,0 +1,59 @@
+GUMDAERI SOURCE-AVAILABLE EVALUATION LICENSE v1.0
+
+Copyright (c) 2026 Kunseok Ko. All rights reserved.
+
+This repository and the software, source code, documentation, samples, and
+other materials contained in it (collectively, the "Software") are made
+publicly visible for portfolio review and evaluation purposes only.
+
+1. PERMITTED USE
+You may:
+- view and inspect the source code;
+- run an unmodified copy of the Software for personal, non-commercial
+  evaluation, testing, or portfolio/recruitment review; and
+- make copies only to the limited extent technically necessary for those
+  permitted evaluation purposes.
+
+2. PROHIBITED USE
+Unless you first obtain explicit written permission from the copyright holder,
+you may not:
+- modify, adapt, translate, or create derivative works from the Software;
+- redistribute, republish, mirror, sublicense, or provide copies of the
+  Software or any substantial portion of it to third parties;
+- sell, rent, license, monetize, or otherwise commercially exploit the
+  Software;
+- use the Software, in whole or in part, in a commercial product, paid service,
+  internal business operation, client deliverable, or revenue-generating
+  workflow;
+- remove or alter copyright, license, attribution, or ownership notices; or
+- represent the Software or a derivative of it as your own work.
+
+3. GITHUB PLATFORM RIGHTS
+If this repository is hosted publicly on GitHub, any limited rights that GitHub
+or its users receive solely because they are necessary to operate GitHub's
+public-repository features are governed by GitHub's applicable terms. No
+additional copyright license is granted by this License beyond the permissions
+stated in Section 1.
+
+4. THIRD-PARTY SERVICES
+The Software may optionally interact with third-party services or APIs. Those
+services are governed by their own terms, privacy policies, and licenses. This
+License does not grant rights to any third-party material.
+
+5. NO WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, ACCURACY, OR RELIABILITY. REVIEW
+RESULTS PRODUCED BY THE SOFTWARE MUST BE VERIFIED BY A HUMAN.
+
+6. LIMITATION OF LIABILITY
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE COPYRIGHT HOLDER SHALL NOT BE
+LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM OR RELATED TO
+THE SOFTWARE OR ITS USE.
+
+7. COMMERCIAL OR MODIFICATION LICENSES
+For permission to modify, redistribute, integrate, or use the Software
+commercially, contact the copyright holder and obtain separate written
+permission before doing so.
+
+This is a source-available license. It is not an open-source license.

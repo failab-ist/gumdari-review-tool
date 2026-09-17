@@ -1,0 +1,3063 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>검대리 — 원고 자동 검수</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Crect width='44' height='44' rx='10' fill='%234070d8'/%3E%3Cg fill='white'%3E%3Cpath d='M15 11 L22 17 L29 11 L27 9 L22 13 L17 9 Z'/%3E%3Cpath d='M20 17 L24 17 L23.2 21 L20.8 21 Z'/%3E%3Cpath d='M20.8 21 L23.2 21 L25 32 L22 36 L19 32 Z'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=satoshi@700,500,900&display=swap">
+<script src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+<style>
+/* ══════════════════════════════════════════════════════
+   Vibe   : Clean Structural            (soft-skill 29)
+   Type   : Pretendard + Satoshi        (taste-skill 22·23)
+   Icons  : Iconify Solar               (taste-skill 24)
+   Accent : 1개 · 채도 80% 미만          (taste-skill 48·50)
+   Motion : cubic-bezier(.16,1,.3,1)    (soft-skill 5A)
+   Tailwind CDN 만 제외 — 끊기면 화면이 붕괴하므로 CSS 직접 작성
+   ══════════════════════════════════════════════════════ */
+:root{
+  --bg:#f6f7f9; --white:#fff; --tray:#eef0f3; --sunk:#f8f9fb;
+  --ink:#12161c; --ink2:#5a6472; --ink3:#98a1b0;
+  --line:#e8eaef; --hair:#f1f3f6;
+  --acc:#4070d8; --acc-d:#2f59b8; --acc-w:#eef3fd; --acc-h:rgba(64,112,216,.22);
+  --red:#d64545; --red-w:#fdf2f2;
+  --amber:#b8761a; --amber-w:#fdf8ef;
+  --green:#2f8560; --green-w:#f0f8f4;
+  --ai:#7a52c9; --ai-w:#f6f2fd;
+  --R:24px; --r:16px; --r2:11px;
+  --sh:0 20px 60px -15px rgba(18,22,28,.05);
+  --sh2:0 28px 80px -20px rgba(18,22,28,.10);
+  --e:.5s cubic-bezier(.16,1,.3,1);
+  --disp:'Satoshi','Pretendard Variable','Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;
+  --sans:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,-apple-system,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.62;
+  word-break:keep-all;overflow-wrap:break-word;-webkit-font-smoothing:antialiased;letter-spacing:-.014em}
+button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+button{cursor:pointer}
+::selection{background:#d7e3fb;color:var(--ink)}
+:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+iconify-icon{display:inline-block;vertical-align:-.14em}
+
+/* ── 브랜드 줄 (스크롤하면 올라감) ── */
+.brandbar{max-width:1400px;margin:0 auto;padding:22px 36px 0;display:flex;align-items:center;gap:12px}
+.brandbar svg{width:34px;height:23px;fill:var(--acc);flex:0 0 auto}
+.brandbar b{font-family:var(--disp);font-size:21px;font-weight:900;letter-spacing:-.035em}
+.brandbar i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--ink3)}
+
+/* ── 떠 있는 유리 내비 ── */
+header.top{position:sticky;top:0;z-index:40;padding:14px 0 14px;background:var(--bg);
+  box-shadow:0 12px 12px -12px rgba(18,22,28,.06)}
+.topin{max-width:1400px;margin:0 auto;padding:0 36px;display:flex}
+nav{display:flex;gap:3px;padding:5px;border-radius:999px;background:var(--white);
+  border:1px solid var(--line);box-shadow:0 6px 22px -10px rgba(18,22,28,.18)}
+nav button{background:none;border:none;padding:10px 21px;border-radius:999px;color:var(--ink2);
+  font-weight:600;font-size:14px;transition:all var(--e)}
+nav button:hover{color:var(--ink)}
+nav button.on{background:var(--acc);color:#fff;font-weight:700}
+@media(max-width:760px){.brandbar{padding:20px 18px 0}.topin{padding:0 18px}nav{overflow-x:auto}}
+
+.wrap{max-width:1400px;margin:0 auto;padding:0 36px 40px}
+@media(max-width:760px){.wrap{padding:0 18px 40px}}
+.panel{display:none}.panel.on{display:block}
+
+/* ── 좌측 고정 색인 + 단일 컬럼 본문 ── */
+.withrail{display:grid;grid-template-columns:224px minmax(0,1fr);gap:44px;align-items:start}
+.rail{position:sticky;top:82px;margin-top:18px;padding:8px;display:flex;flex-direction:column;gap:2px;
+  background:var(--white);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 2px 10px -4px rgba(18,22,28,.08)}
+.rail a{display:flex;align-items:baseline;gap:11px;font-size:13.5px;color:var(--ink3);text-decoration:none;
+  padding:9px 14px;border-radius:var(--r2);font-weight:600;transition:all var(--e);border-left:2px solid transparent}
+.rail a.cur{border-left-color:var(--acc)}
+.rail a:hover{background:var(--sunk);color:var(--ink2)}
+.rail a.cur{background:var(--acc-w);color:var(--acc)}
+.rail a span{font-family:var(--mono);font-size:11px;opacity:.8}
+@media(max-width:1080px){
+  .withrail{grid-template-columns:1fr;gap:0}
+  .rail{position:sticky;top:70px;z-index:20;flex-direction:row;overflow-x:auto;padding:8px;margin:14px 0 0;
+    border-radius:999px;-webkit-overflow-scrolling:touch}
+  .rail a{white-space:nowrap;border-left:none;border-radius:999px}
+  .rail a.cur{border-left:none}
+}
+
+/* ── Double-Bezel 시트 · 섹션 제목 상단 고정 ── */
+.sheet{margin:18px 0;padding:5px;border-radius:var(--R);background:var(--tray);box-shadow:0 10px 30px -18px rgba(18,22,28,.16);
+  opacity:0;transform:translateY(22px);animation:up .85s var(--e) forwards}
+.sheet:nth-of-type(2){animation-delay:80ms}.sheet:nth-of-type(3){animation-delay:160ms}
+.sheet:nth-of-type(4){animation-delay:240ms}.sheet:nth-of-type(5){animation-delay:320ms}
+@keyframes up{to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.sheet{animation:none;opacity:1;transform:none}}
+.shead{position:sticky;top:72px;z-index:10;padding:22px 30px 18px;background:rgba(255,255,255,.93);
+  backdrop-filter:blur(16px) saturate(180%);border-radius:calc(var(--R) - 6px) calc(var(--R) - 6px) 0 0;
+  border-bottom:1px solid var(--hair)}
+.snum{display:inline-block;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;
+  color:var(--acc);background:var(--acc-w);padding:4px 11px;border-radius:999px;margin-bottom:10px}
+.stitle h2{margin:0;font-family:var(--disp);font-size:27px;font-weight:900;letter-spacing:-.045em;line-height:1.18}
+/* ch 는 숫자 0 의 폭 기준이라 한글에서는 체감 절반이 된다. 폭이 남는데도 줄이 넘어가서 px 로 바꿨다 */
+.stitle p{margin:7px 0 0;color:var(--ink2);font-size:13.5px;line-height:1.6;max-width:940px}
+.sbody{padding:26px 30px;background:var(--white);border-radius:0 0 calc(var(--R) - 6px) calc(var(--R) - 6px)}
+@media(max-width:760px){.shead{position:static;padding:20px 18px 16px}.sbody{padding:24px 20px}.stitle h2{font-size:25px}}
+
+.field{padding:22px 0;border-top:1px solid var(--hair)}
+.field:first-child{border-top:none;padding-top:0}
+.lbl{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.17em;text-transform:uppercase;
+  color:var(--acc);background:var(--acc-w);padding:4px 11px;border-radius:999px;margin-bottom:13px}
+label.f{display:block;font-weight:700;font-size:14px;margin:0 0 6px}
+.why{font-size:12.5px;color:var(--ink2);margin:0 0 10px;line-height:1.62;max-width:900px}
+.why b{color:var(--ink);font-weight:700}
+.hint{font-size:12.5px;color:var(--ink3);margin-top:9px;line-height:1.6}
+.hint b{color:var(--ink2)}
+
+input[type=text],input[type=number],input[type=password],textarea,select{width:100%;min-height:44px;padding:11px 15px;
+  border:1px solid var(--line);border-radius:var(--r2);background:var(--sunk);transition:all var(--e);font-size:14.5px}
+input:hover:not(:disabled),textarea:hover,select:hover{border-color:#d5dae2;background:var(--white)}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acc);background:var(--white);
+  box-shadow:0 0 0 4px var(--acc-w)}
+input:disabled{background:var(--tray);color:var(--ink3);cursor:not-allowed}
+textarea{resize:vertical;min-height:78px;line-height:1.65}
+::placeholder{color:#b3bac5}
+input:not(:placeholder-shown),textarea:not(:placeholder-shown){background:var(--white)}
+input[type=file]{border:none;background:none;padding:0;min-height:auto;font-size:13.5px;color:var(--ink2)}
+input[type=file]::file-selector-button{font:inherit;font-weight:700;border:none;background:var(--ink);color:#fff;
+  padding:11px 20px;border-radius:999px;margin-right:14px;cursor:pointer;transition:all var(--e)}
+input[type=file]::file-selector-button:hover{transform:scale(1.03)}
+select{appearance:none;padding-right:44px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1.5 6 6.5 11 1.5' stroke='%2398a1b0' stroke-width='1.7' fill='none' stroke-linecap='round'/></svg>");
+  background-repeat:no-repeat;background-position:right 16px center}
+.row{display:grid;gap:20px;margin-bottom:16px}
+.row.col2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.row.col3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:900px){.row.col2,.row.col3{grid-template-columns:1fr}}
+
+/* ── CTA: 알약 + 안쪽 원형 아이콘 ── */
+.btn{display:inline-flex;align-items:center;gap:11px;background:var(--acc);color:#fff;border:none;
+  padding:0 7px 0 24px;min-height:48px;border-radius:999px;font-weight:700;font-size:15px;transition:all var(--e)}
+.btn::after{content:"";width:34px;height:34px;border-radius:999px;background:rgba(255,255,255,.2);flex:0 0 auto;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 15 15'><path d='M3.2 7.5h8.1M7.9 4.1l3.4 3.4-3.4 3.4' stroke='white' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat:no-repeat;background-position:center;transition:transform var(--e)}
+.btn:hover{background:var(--acc-d);transform:scale(1.02);box-shadow:0 14px 34px -14px rgba(64,112,216,.7)}
+.btn:hover::after{transform:translateX(4px)}
+.btn:active{transform:scale(.98)}
+.btn.red{background:var(--ink)}
+.btn.red:hover{background:#000;box-shadow:0 14px 34px -14px rgba(18,22,28,.6)}
+.btn.ghost{background:var(--white);color:var(--ink);border:1px solid var(--line);padding:0 20px;min-height:42px;font-size:13.5px}
+.btn.ghost::after{display:none}
+.btn.ghost:hover{border-color:var(--acc);color:var(--acc);background:var(--white);box-shadow:var(--sh);transform:scale(1.02)}
+.btn.sm{min-height:40px;padding:0 18px;font-size:13px}.btn.sm::after{display:none}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.x{background:var(--white);border:1px solid var(--line);color:var(--ink3);width:46px;height:48px;
+  border-radius:var(--r2);transition:all var(--e)}
+.x:hover{border-color:var(--red);color:var(--red);background:var(--red-w)}
+
+/* ── 알림 ── */
+.warn{border-radius:var(--r);background:var(--red-w);padding:18px 22px;font-size:13px;line-height:1.72;
+  color:#8f3131;margin:18px 0;border:1px solid #f6dcdc}
+.warn b{color:var(--red);font-weight:700}
+.note{border-radius:var(--r);background:var(--sunk);padding:16px 20px;font-size:13px;margin:16px 0;
+  color:var(--ink2);border:1px solid var(--line)}
+.note.err{background:var(--red-w);color:#8f3131;border-color:#f6dcdc}
+.note.ok{background:var(--green-w);color:#1f6449;border-color:#cfe8dc}
+.note b{color:inherit;font-weight:700}
+
+/* ── 토글 ── */
+.opt{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid var(--hair)}
+.opt:last-child{border-bottom:none}
+.sw{position:relative;flex:0 0 48px;height:28px;background:#d3d8e0;border-radius:999px;cursor:pointer;
+  transition:all var(--e);margin-top:1px}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;background:#fff;border-radius:50%;
+  transition:all var(--e);box-shadow:0 2px 6px rgba(18,22,28,.16)}
+.sw.on{background:var(--acc)}.sw.on::after{transform:translateX(20px)}
+.opt .tx{flex:1;min-width:0}
+.opt .tx b{display:block;font-size:14.5px;font-weight:700;margin-bottom:4px}
+.opt .tx span{font-size:13px;color:var(--ink2);line-height:1.6}
+.who{font-size:11px;font-weight:700;padding:5px 11px;border-radius:999px;background:var(--tray);color:var(--ink2);
+  white-space:nowrap;margin-top:2px}
+.who.ai{background:var(--ai-w);color:var(--ai)}
+details.dict{margin-top:14px}
+details.dict summary{cursor:pointer;font-size:12.5px;color:var(--acc);font-weight:700;list-style:none;
+  display:inline-block;padding:7px 15px;border-radius:999px;background:var(--acc-w);transition:all var(--e)}
+details.dict summary::-webkit-details-marker{display:none}
+details.dict summary:hover{color:var(--brand)}
+details.dict summary::before{content:"▸ ";display:inline-block;transition:transform .15s}
+details.dict[open] summary::before{content:"▾ "}
+details.dict textarea{margin-top:12px;font-size:12.5px;min-height:108px;font-family:var(--mono)}
+
+table.g{width:100%;border-collapse:separate;border-spacing:0 9px}
+table.g th{text-align:left;font-size:12px;color:var(--ink3);padding:0 9px 0 0;font-weight:600}
+table.g td{padding:0 9px 0 0;vertical-align:top}table.g td:last-child{padding-right:0}
+.empty{padding:26px 20px;text-align:center;color:var(--ink3);font-size:13.5px;border-radius:var(--r);background:var(--sunk)}
+.vlist{font-family:var(--mono);font-size:11.5px;color:var(--ink3);padding:2px 0 6px;line-height:1.8}
+.vlist b{color:var(--red);font-weight:500}
+.sugg{border-radius:var(--r);padding:17px 20px;margin-bottom:9px;background:var(--sunk);display:flex;gap:14px;align-items:flex-start}
+.sugg input{margin:3px 0 0;accent-color:var(--acc);width:auto;min-height:auto;flex:0 0 auto;transform:scale(1.2)}
+.sugg .k{font-size:13px;color:var(--ink);font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.sugg .k em{font-style:normal;font-size:10.5px;font-weight:600;color:var(--ink3);background:var(--tray);
+  padding:2px 8px;border-radius:999px;letter-spacing:.02em}
+.sugg .v{font-size:13.5px;line-height:1.65}
+
+/* ── 업로드 ── */
+.drop{border-radius:var(--R);padding:46px 26px;text-align:center;background:var(--sunk);cursor:pointer;
+  transition:all var(--e);border:1.5px dashed #d5dae2}
+.drop:hover,.drop.over{border-color:var(--acc);background:var(--acc-w)}
+.drop iconify-icon{font-size:38px;color:var(--acc);margin-bottom:14px}
+.drop b{display:block;font-family:var(--disp);font-size:22px;font-weight:900;margin-bottom:8px;letter-spacing:-.04em}
+.drop small{color:var(--ink3);font-size:13.5px}
+.blocks{display:flex;flex-direction:column;gap:8px;max-height:380px;overflow:auto;margin-top:18px;padding:3px}
+.chunk{border-radius:var(--r);padding:13px 17px;cursor:pointer;background:var(--sunk);transition:all var(--e);
+  border:1px solid transparent}
+.chunk:hover{background:var(--white);border-color:var(--line);box-shadow:var(--sh)}
+.chunk.sel{background:var(--acc-w);border-color:var(--acc)}
+.chunk.skip{opacity:.42}
+.chunk .m{font-family:var(--mono);font-size:11px;color:var(--ink3);display:flex;gap:14px;margin-bottom:5px}
+.chunk .t{font-size:13.5px;max-height:44px;overflow:hidden;color:var(--ink2)}
+
+/* ── Bento 결과 ── */
+.stat{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:26px}
+.stat div{padding:19px 22px;background:var(--sunk);border-radius:var(--r)}
+.stat.plain{grid-template-columns:repeat(3,1fr)}
+.stat.plain div{grid-column:span 1!important;padding:16px 20px}
+.stat.plain .v{font-size:27px}
+.stat div:nth-child(1){grid-column:span 3}
+.stat div:nth-child(2){grid-column:span 3}
+.stat div:nth-child(3){grid-column:span 2}
+.stat div:nth-child(4){grid-column:span 4}
+@media(max-width:760px){.stat{grid-template-columns:repeat(2,1fr)}.stat div{grid-column:span 1!important}}
+.stat .k{font-size:12px;color:var(--ink3);font-weight:600}
+.stat .v{font-family:var(--disp);font-size:30px;font-weight:900;margin-top:6px;letter-spacing:-.05em;line-height:1.05}
+.tier{margin-bottom:30px}
+.tier>h3{display:flex;align-items:center;gap:12px;font-size:14.5px;margin:0 0 14px;font-weight:700}
+.chip{font-size:10.5px;font-weight:700;letter-spacing:.09em;padding:5px 11px;border-radius:999px;text-transform:uppercase}
+.tb1{background:var(--red-w);color:var(--red)}
+.tb2{background:var(--amber-w);color:var(--amber)}
+.tb3{background:var(--tray);color:var(--ink2)}
+.item{display:flex;gap:14px;padding:14px 18px;border-radius:var(--r);background:var(--sunk);
+  margin-bottom:8px;font-size:14.5px;transition:all var(--e)}
+.item.fail{background:var(--red-w)}
+.item.warn{background:var(--amber-w)}
+.item.pass{background:var(--green-w)}
+.item.off{background:var(--sunk);opacity:.45}
+.item.off .bd>b{text-decoration:line-through}
+.item .ic{font-size:10.5px;font-weight:700;padding-top:4px;flex:0 0 42px;letter-spacing:.06em}
+.item.fail .ic{color:var(--red)}.item.warn .ic{color:var(--amber)}.item.pass .ic{color:var(--green)}
+.item .bd{flex:1;min-width:0}
+.item .bd>b{display:block;font-size:14.5px;font-weight:700;margin-bottom:3px}
+.item .bd>span{color:var(--ink2);font-size:13.5px}
+.fix{display:block;margin-top:11px;font-size:13.5px;background:var(--white);border-radius:var(--r2);
+  padding:12px 16px;line-height:1.62;box-shadow:var(--sh)}
+.fix em{font-style:normal;font-size:10.5px;color:var(--ink3);font-weight:700;letter-spacing:.11em;
+  text-transform:uppercase;margin-right:11px}
+.fix i{font-style:normal;color:var(--ink3);text-decoration:line-through}
+.fix b{font-weight:700;color:var(--green)}
+.src{font-size:10.5px;padding:3px 9px;border-radius:999px;background:var(--tray);color:var(--ink2);
+  margin-left:10px;vertical-align:2px;font-weight:700}
+.src.ai{background:var(--ai-w);color:var(--ai)}
+
+/* ── 판정 ── */
+.verdict{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center;padding:24px;
+  border-radius:var(--R);margin-bottom:22px;background:var(--sunk)}
+@media(max-width:680px){.verdict{grid-template-columns:1fr;gap:24px}}
+.stamp{width:116px;height:116px;border-radius:40px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;color:#fff;animation:pop .8s var(--e) both}
+@keyframes pop{0%{opacity:0;transform:scale(1.22)}100%{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.stamp{animation:none}}
+.stamp .lb{font-size:10px;font-weight:700;opacity:.78;letter-spacing:.16em;margin-bottom:7px}
+.stamp .vv{font-family:var(--disp);font-size:22px;font-weight:900;letter-spacing:-.045em;line-height:1.14;text-align:center}
+.stamp .dt{font-family:var(--mono);font-size:10.5px;opacity:.72;margin-top:11px}
+.s-ok{background:var(--green);box-shadow:var(--sh2)}
+.s-fix{background:var(--amber);box-shadow:var(--sh2)}
+.s-no{background:var(--red);box-shadow:var(--sh2)}
+.vwhy{min-width:0}
+.vwhy h3{margin:0 0 8px;font-family:var(--disp);font-size:22px;font-weight:900;letter-spacing:-.045em;line-height:1.22}
+.vwhy p{margin:0;color:var(--ink2);font-size:14.5px}
+
+/* ── 인별 ── */
+.person{border-radius:var(--R);background:var(--sunk);padding:22px;margin-bottom:16px}
+.person>h4{margin:0 0 20px;font-size:18px;font-weight:800;letter-spacing:-.035em;display:flex;align-items:center;
+  gap:12px;flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.person>h4 .badge{font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:999px;color:#fff}
+.person .stat div,.person .item{background:var(--white)}
+.person .item.fail{background:var(--red-w)}.person .item.warn{background:var(--amber-w)}.person .item.pass{background:var(--green-w)}
+
+.checklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(262px,1fr));gap:11px}
+.chk{border-radius:var(--r);padding:16px 18px;background:var(--sunk)}
+.chk b{font-family:var(--mono);font-size:11.5px;color:var(--acc);display:block;margin-bottom:12px;font-weight:600;letter-spacing:.08em}
+.chk label{display:flex;gap:11px;font-size:13.5px;align-items:flex-start;cursor:pointer;padding:4px 0;line-height:1.5}
+.chk input{margin:3px 0 0;accent-color:var(--acc);flex:0 0 auto;min-height:auto;width:auto;transform:scale(1.1)}
+
+table.hist{width:100%;border-collapse:collapse;font-size:13.5px}
+table.hist th{text-align:left;font-size:11px;color:var(--ink3);border-bottom:1px solid var(--line);
+  padding:12px 13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+table.hist td{padding:12px 13px;border-bottom:1px solid var(--hair)}
+table.hist tr:hover td{background:var(--sunk)}
+table.hist td.n{font-family:var(--mono);font-size:12.5px}
+.mode{display:inline-flex;background:var(--tray);padding:5px;border-radius:999px;gap:3px}
+.mode button{background:none;border:none;padding:0 22px;min-height:44px;font-size:13.5px;font-weight:600;
+  color:var(--ink2);border-radius:999px;transition:all var(--e)}
+.mode button.on{background:var(--white);color:var(--acc);font-weight:700;box-shadow:var(--sh)}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--line);border-top-color:var(--acc);
+  border-radius:50%;animation:sp .6s linear infinite;vertical-align:-1px;margin-right:9px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spin{animation:none}}
+
+/* ── 꼬리말 ── */
+.foot{max-width:1400px;margin:32px auto 0;padding:28px 36px 56px;border-top:1px solid var(--line)}
+.foot .fl{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.foot .fl svg{width:26px;height:18px;fill:var(--ink3)}
+.foot .fl b{font-family:var(--disp);font-size:16px;font-weight:900;letter-spacing:-.03em}
+.foot .fl span{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+.foot p{margin:0 0 7px;font-size:13px;color:var(--ink3);line-height:1.7;max-width:none}
+.foot b{color:var(--ink2);font-weight:700}
+.foot a{color:var(--acc);text-decoration:none;font-weight:700}
+.foot a:hover{text-decoration:underline}
+@media(max-width:760px){.foot{padding:30px 18px 60px}}
+/* 반복 인라인 스타일 → 유틸 */
+.mt12{margin-top:12px}.mt14{margin-top:14px}
+/* 검수 결과에서 지적을 빼는 버튼 — 기계도 AI도 틀리게 잡을 때가 있다 */
+.item .undo{margin-left:9px;padding:2px 8px;border:1px solid var(--line);background:#fff;
+  border-radius:5px;font:inherit;font-size:11px;font-weight:600;color:var(--ink3);cursor:pointer;vertical-align:middle}
+.item .undo:hover{border-color:var(--brand);color:var(--brand)}
+.item.off .undo{border-color:var(--brand);color:var(--brand)}
+
+/* 블록마다 누가 쓴 원고인지 지정 — 자동 인식이 틀렸을 때 사람이 고친다 */
+.chunk .m select.pw{margin-left:auto;padding:1px 5px;border:1px solid var(--line);background:#fff;
+  border-radius:5px;font:inherit;font-size:11px;color:var(--ink2);max-width:150px}
+.chunk .m{display:flex;align-items:center;gap:8px}
+</style>
+</head>
+<body>
+
+<div class="brandbar">
+  <svg viewBox="0 0 44 30" aria-hidden="true"><path d="M15 4 L22 10 L29 4 L27 2 L22 6 L17 2 Z"/><path d="M20 10 L24 10 L23.2 13 L20.8 13 Z"/><path d="M20.8 13 L23.2 13 L25 23 L22 27 L19 23 Z"/></svg>
+  <b data-app>검대리</b><i data-ver>v1.0.2</i>
+</div>
+
+<header class="top"><div class="topin">
+  <nav>
+    <button data-p="set" class="on">설정</button>
+    <button data-p="ai">AI 설정</button>
+    <button data-p="rev">검수</button>
+    <button data-p="his">이력</button>
+  </nav>
+</div></header>
+
+<main class="wrap">
+<section class="panel on" id="p-set"><div class="withrail"><nav class="rail" id="rail"></nav><div>
+
+  <div class="sheet"><div class="shead"><span class="snum">01</span><div class="stitle">
+    <h2>설정 저장</h2><p>아래에서 만드신 검수 기준을 파일로 남기고, 다시 불러오는 곳입니다. <b>가이드 파일과는 다릅니다.</b></p>
+  </div></div><div class="sbody" style="padding:20px 30px">
+    <p class="why" style="margin-top:0">여기서 정하신 설정은 <b>이 브라우저에 자동으로 저장됩니다.</b> 창을 닫았다 다시 여셔도 그대로 있습니다.<br>
+      다만 브라우저 기록을 지우거나 다른 PC에서 여시면 사라집니다. <b>중요한 캠페인은 파일로 한 번 저장해 두세요.</b></p>
+    <div class="btnrow">
+      <button class="btn ghost sm" id="pfSave">설정 파일로 저장</button>
+      <button class="btn ghost sm" id="pfLoad">설정 파일 불러오기</button>
+      <button class="btn ghost sm" id="pfReset">새 캠페인 시작</button>
+    </div>
+    <div class="hint"><b>설정 파일로 저장</b> — <code>.json</code> 파일 하나가 내려받아집니다. 이 도구에서 내보낸 파일만 다시 불러올 수 있습니다.<br>
+      <b>설정 파일 불러오기</b> — 팀원이 만든 설정을 그대로 쓰실 수 있습니다. 모두 같은 기준으로 검수하게 됩니다.<br>
+      <b>새 캠페인 시작</b> — 지금 설정을 전부 지우고 처음 상태로 되돌립니다. 이전 캠페인 값이 섞이지 않게 할 때 쓰세요.</div>
+  </div></div>
+
+  <div class="sheet"><div class="shead"><span class="snum">02</span><div class="stitle">
+    <h2>가이드 불러오기</h2><p>가이드 파일을 읽어 아래 설정을 제안합니다. 체크하신 것만 반영되고 기존 값을 덮어쓰지 않습니다.</p>
+  </div></div><div class="sbody">
+    <input type="file" id="mGuide" accept=".docx,.pptx,.xlsx">
+    <div class="hint" id="mGuideOut">워드 · 파워포인트 · 엑셀을 읽습니다. 올려두신 가이드는 AI 검수 프롬프트에도 함께 들어갑니다.</div>
+    <div class="btnrow" style="margin:20px 0 0">
+      <button class="btn ghost sm" id="gxRun" disabled>가이드에서 읽기</button>
+      <button class="btn ghost sm" id="gxAI" disabled>AI로 보완하기</button>
+      <button class="btn ghost sm" id="gxCopy" disabled>가이드 분석 프롬프트 복사</button>
+      <span class="hint" id="gxWhy" style="margin:0"></span>
+    </div>
+    <div class="warn">문서 구조를 기계적으로 읽는 방식이라 가이드 양식에 따라 <b>잘못 뽑히거나 빠질 수 있습니다.</b>
+      적용 전에 반드시 가이드 원문과 대조해 주세요. 이 도구가 뽑은 값의 정확성은 보장되지 않습니다.</div>
+    <div id="gxBox"></div>
+  </div></div>
+
+  <div class="sheet"><div class="shead"><span class="snum">03</span><div class="stitle">
+    <h2>기본 검수 항목</h2><p>어느 캠페인에나 들어가는 항목이라 도구가 기본으로 제공합니다. 필요 없으면 꺼 두셔도 됩니다.</p>
+  </div></div><div class="sbody"><div id="baseBox"></div></div></div>
+
+  <div class="sheet"><div class="shead"><span class="snum">04</span><div class="stitle">
+    <h2>캠페인 설정</h2><p>캠페인마다 직접 채우는 항목입니다. 한 번 만들어 프로필로 내보내면 계속 씁니다.</p>
+  </div></div><div class="sbody">
+
+    <div class="field"><div class="row col2">
+      <div><label class="f">캠페인명</label><input type="text" id="cName" placeholder="예) 2026 래온셀 배리어 크림 체험단"></div>
+      <div><label class="f">검수자 이름</label>
+        <p class="why">검수본 파일의 코멘트 작성자로 기록됩니다. 누가 언제 봤는지 남기기 위한 항목입니다.</p>
+        <input type="text" id="cWho" placeholder="예) 검대리" value="검대리"></div>
+    </div></div>
+
+    <div class="field"><span class="lbl">제품명 사전</span>
+      <p class="why">정식 표기만 넣으시면 대소문자·띄어쓰기·철자 뒤바뀜을 자동으로 잡습니다. <b>래온셀 배리어 크림</b> 한 줄이면 래온셀배리어크림 · RAEONCELL 배리어 크림 · 래온셀 베리어 크림이 모두 걸립니다.</p>
+      <div id="pnBox"></div>
+      <button class="btn ghost sm mt14" id="pnAdd">제품명 추가</button>
+    </div>
+
+    <div class="field"><span class="lbl">정식 명칭</span>
+      <p class="why">기능명처럼 <b>붙여 써야 하는 브랜드 용어</b>를 적어 주세요. AI가 이걸 맞춤법 오류로 잡지 않게 막아 줍니다.
+        제품명 사전과 필수 고지 문구에 넣으신 이름은 자동으로 포함되니, 여기에는 <b>거기에 없는 것만</b> 추가하시면 됩니다.</p>
+      <textarea id="properNames" placeholder="예) 딥배리어&#10;트리플히알론&#10;시카리페어"></textarea>
+      <div class="hint">한 줄에 하나씩 적어 주세요.</div>
+    </div>
+
+    <div class="field"><span class="lbl">필수 해시태그</span>
+      <div class="row">
+        <div><label class="f">모든 콘텐츠에 반드시 들어갈 태그</label>
+          <p class="why">가이드의 공통 해시태그를 그대로 붙여넣으세요. 하나라도 빠지면 티어 2로 잡습니다.</p>
+          <textarea id="hReq" placeholder="예) #래온셀 #래온셀배리어크림 #딥배리어세럼"></textarea>
+          <div class="hint">공백·줄바꿈·<b>#</b> 어느 쪽으로 구분하셔도 됩니다.</div></div>
+      </div>
+      <label class="f mt12">택1 그룹</label>
+      <p class="why">"이 중 최소 몇 개"만 있으면 되는 경우에 씁니다. 제품군에 따라 태그가 갈리거나, 특정 크리에이터만 두 개 다 써야 하는 경우입니다.</p>
+      <div id="hgBox"></div>
+      <button class="btn ghost sm mt14" id="hgAdd">그룹 추가</button>
+    </div>
+
+    <div class="field"><span class="lbl">상단 필수 문구</span>
+      <div class="row col2">
+        <div><label class="f">본문 앞부분에 반드시 나와야 할 문구</label>
+          <p class="why">콘텐츠 초반에 특정 문구를 반드시 넣어 달라는 요청이 있을 때 씁니다. 예를 들어 "초반에 제품명을 강조해 달라" 같은 경우입니다.
+            <b>광고 고지와는 다른 항목입니다.</b> 고지 문구는 아래 광고 고지 칸에 넣어 주세요. 비워 두시면 검사하지 않습니다.</p>
+          <input type="text" id="leadText" placeholder="예) 래온셀 배리어 크림"></div>
+        <div><label class="f">확인 범위</label>
+          <p class="why">본문 앞에서 몇 글자까지 볼지 정합니다. 블로그는 400~600자, 인스타는 200자 정도가 적당합니다.</p>
+          <input type="number" id="leadRange" placeholder="예) 400"></div>
+      </div>
+    </div>
+
+    <div class="field"><span class="lbl">필수 고지 문구</span>
+      <p class="why"><b>원고에 특정 기능이나 효과가 나오면, 정해진 문구가 반드시 따라붙어야 하는 캠페인</b>에서 씁니다.
+        업종에 따라 유의 문구 · 역자막 · 주석 · 단서 조항 등으로 부릅니다. 이런 경우입니다.</p>
+      <ul class="why" style="margin:0 0 4px 18px;padding:0">
+        <li><b>법정 사전심의 대상</b> — 의료기기, 의약품, 건강기능식품처럼 광고 문안을 미리 심의받는 품목</li>
+        <li><b>자율심의 대상</b> — 화장품 기능성 표시, 금융상품 설명, 주류 등 협회·기관 자율 규약이 걸리는 품목</li>
+        <li><b>법령상 의무 고지</b> — 「개인차가 있을 수 있습니다」, 「시험 조건에 따라 다를 수 있습니다」처럼 실증 근거에 붙는 단서</li>
+        <li><b>브랜드 가이드라인상 필수</b> — 특정 기능명을 쓰면 반드시 같이 넣기로 클라이언트와 합의한 문구</li>
+      </ul>
+      <p class="why"><b>해당 없으면 이 항목을 통째로 건너뛰셔도 됩니다.</b> 아무것도 등록하지 않으시면 관련 검사가 자동으로 꺼집니다.</p>
+      <details class="dict"><summary>필수 고지 문구 설정하기</summary>
+      <p class="why" style="margin-top:14px"><b>이렇게 동작합니다.</b><br>
+        ① 원고 전체에서 등록하신 <b>기능명</b>을 찾습니다. →
+        ② 기능명이 나왔으면, 짝지어 둔 <b>고지 문구</b>가 원고에 있는지 확인합니다. →
+        ③ 없으면 위반으로 잡습니다. <b>기능명이 아예 안 나왔으면 검사하지 않습니다.</b><br>
+        그래서 기능명을 적어 두셔야 합니다. 고지 문구에 기능명이 안 적혀 있어도 상관없습니다.
+        <b>기능명은 「언제 이 문구가 필요한지」를 판단하는 방아쇠일 뿐</b>이고, 고지 문구 본문에 들어가는 게 아닙니다.<br><br>
+        기계는 <b>있는지 · 중복인지 · 모양이 맞는지</b>를 보고, 내용이 기능과 맞는지는 <b>AI가 봅니다.</b></p>
+      <div class="row col2">
+        <div><label class="f">필요한 고지 문구</label>
+          <p class="why">기능명을 언급하면 따라와야 하는 문구를 쌍으로 등록합니다. 원고에 그 기능이 안 나오면 검사도 하지 않습니다.</p>
+          <div id="fnBox"></div>
+          <button class="btn ghost sm mt14" id="fnAdd">고지 문구 추가</button></div>
+        <div><label class="f">넣으면 안 되는 고지 문구</label>
+          <p class="why">캠페인을 돌리다 보면 가이드에 있던 문구가 빠지거나 실증 자료가 없어 못 쓰게 되는 경우가 생깁니다.
+            <b>제외 대상이 정해질 때마다 여기에 추가해 주세요.</b> 가이드에서는 자동으로 뽑지 않습니다.</p>
+          <textarea id="banSub" placeholder="예) * 임상시험에서 피부 재생률 98% 개선이 확인되었습니다.&#10;* 민감성 피부도 부작용 없이 사용 가능합니다." style="min-height:124px"></textarea>
+          <div class="hint">한 줄에 하나씩. 앞 15자만 일치해도 잡으므로 일부만 베껴 온 경우도 걸립니다.</div></div>
+      </div>
+      <div class="hint" style="margin-top:16px"><b>표기 방식은 따로 설정하지 않으셔도 됩니다.</b>
+        <code>[기능명]</code> <code>(기능명)</code> <code>「기능명」</code> 같은 괄호와 <code>*</code> <code>※</code> <code>·</code> <code>-</code> 같은 기호를 모두 알아서 읽습니다.
+        기능 이름 없이 문구만 적힌 원고도, 기호 없이 문장으로만 적은 원고도 <b>위에 등록하신 사전을 기준으로 판정</b>하므로 그대로 검사됩니다.</div>
+      </details>
+    </div>
+
+    <div class="field"><span class="lbl">표 머리말 사전</span>
+      <p class="why">원고가 표로 되어 있을 때, <b>어느 열이 무슨 내용인지</b>를 머리말 단어로 알아냅니다.
+        회사마다 부르는 이름이 달라서 직접 정하실 수 있게 했습니다. 한 줄에 하나씩, 쉼표로 여러 개를 적으시면 됩니다.</p>
+      <div class="row col2">
+        <div><label class="f">본문이 들어 있는 열</label>
+          <input type="text" id="hdrMention" value="멘션, 캡션, 본문 내용, 원고 내용, 대본, 나레이션"></div>
+        <div><label class="f">고지 문구가 들어 있는 열</label>
+          <input type="text" id="hdrSub" value="역자막, 유의 문구, 필수 고지 문구, 고지 문구, 자막"></div>
+      </div>
+      <div class="row col2">
+        <div><label class="f">검수자가 적는 열</label>
+          <input type="text" id="hdrReview" value="수정 요청, 피드백, 검수 내용"></div>
+        <div><label class="f">이미지·씬 번호가 들어 있는 열</label>
+          <input type="text" id="hdrIdx" value="이미지 순서, 이미지, 씬, 컷, 화면 구성"></div>
+      </div>
+      <div class="row col2">
+        <div><label class="f">작성자 이름이 들어 있는 열</label>
+          <input type="text" id="hdrPerson" value="인플루언서, 크리에이터, 계정, 작성자, 담당자, 채널명">
+          <div class="hint">여러 명의 원고가 한 파일에 있을 때 <b>누구 것인지 나누는 기준</b>이 됩니다.</div></div>
+        <div></div>
+      </div>
+    </div>
+
+    <div class="field"><span class="lbl">이미지 확인 항목</span>
+      <div class="row"><div><label class="f">제품 특성상 추가로 볼 것</label>
+        <p class="why">공통 4개 항목(타사 노출·제품 왜곡·초점·구도)은 기본으로 깔립니다. 여기에는 <b>이 제품이라서 봐야 하는 것</b>만 적어 주세요.
+          제품이 나오지 않는 캠페인이라면 <b>03 기본 검수 항목</b>에서 꺼 두셔도 됩니다.</p>
+        <textarea id="imgChecks" placeholder="예) 사용 전후 비교 컷으로 오인될 구도가 아닌지&#10;과도한 보정으로 피부 표현이 왜곡되지 않았는지&#10;제품 라벨과 용기 표기가 가려지지 않았는지"></textarea>
+        <div class="hint">한 줄에 하나씩. 이미지마다 이 항목이 체크박스로 붙습니다.</div></div></div>
+    </div>
+
+    <div class="field"><span class="lbl">플랫폼</span>
+      <p class="why">검수 기준이 되는 플랫폼을 직접 정의합니다. <b>파일 형식과는 아무 관계가 없습니다.</b>
+        블로그 원고를 파워포인트로 쓰시든 영상 기획안을 엑셀로 쓰시든 상관없습니다.
+        검수하실 때 여기 등록하신 것 중에서 직접 고르시게 됩니다.</p>
+      <div id="plBox"></div>
+      <button class="btn ghost sm mt14" id="plAdd">플랫폼 추가</button>
+      <p class="why"><b>별칭</b>은 가이드에서 이 플랫폼 이야기를 찾을 때 쓰는 다른 이름입니다. 쉼표로 구분해 주세요.<br>
+        <b>광고 고지</b>는 본문 앞에서 정하신 글자 수 안에 문구가 있는지만 기계가 확인합니다.
+        해시태그로 쓸지 문장으로 쓸지 같은 <b>표기 방식의 적절성은 AI가 판단</b>합니다. 플랫폼마다 관행이 다르기 때문입니다.</p>
+    </div>
+
+    <div class="field"><span class="lbl">사전</span>
+      <p class="why">기계가 원고에서 찾아낼 단어 목록입니다. <b>03 기본 검수 항목</b>에서 해당 항목을 꺼 두시면 검사하지 않습니다.</p>
+      <div class="row col2">
+        <div><label class="f">타 브랜드 언급</label>
+          <p class="why">원고에 나오면 안 되는 경쟁사·타 브랜드 이름입니다. 하나라도 걸리면 <b>티어 1(게재 불가)</b>로 잡습니다.
+            <b>기본값은 비어 있습니다.</b> 업종마다 경쟁 구도가 완전히 달라서 미리 채워 두면 오탐만 납니다.</p>
+          <textarea id="rivalDict" placeholder="예) 비오나르&#10;BIONARR&#10;셀피오" style="min-height:150px;font-family:var(--mono);font-size:12.5px"></textarea>
+          <div class="hint">한 줄에 하나씩. 영문 표기가 따로 있으면 그것도 각각 넣어 주세요.</div></div>
+        <div><label class="f">최상급 · 과장 표현</label>
+          <p class="why">법무에서 문제 삼는 단정적 표현입니다. <b>티어 2(수정 필요)</b>로 잡습니다.
+            업종마다 기준이 달라 일반적인 것만 넣어 두었습니다. <b>이 업종에서 쓰면 안 되는 표현을 추가</b>하시고,
+            일상적으로 쓰는 단어는 빼두시면 오탐이 줄어듭니다.</p>
+          <textarea id="hypeDict" style="min-height:150px;font-family:var(--mono);font-size:12.5px"></textarea>
+          <div class="hint">한 줄에 하나씩.</div></div>
+      </div>
+    </div>
+
+    <div class="field"><span class="lbl">참고 자료</span>
+      <div class="row"><div><label class="f">사실 확인에 쓸 자료</label>
+        <p class="why">공식 상세페이지, 제품 설명서, 시험 성적서 요약처럼 <b>맞는 내용의 근거</b>가 되는 텍스트를 넣어 두시면 AI가 판단할 때 근거로 씁니다.
+          없으면 사실인 내용도 추측으로 지적할 수 있습니다.</p>
+        <textarea id="refText" placeholder="예) 래온셀 배리어 크림은 세라마이드 3종을 배합한 보습 크림으로, 자사 시험 기준 12시간 수분 지속을 확인했습니다"></textarea></div></div>
+    </div>
+
+    <div class="field"><span class="lbl">미션 프리셋</span>
+      <p class="why">가이드에 콘텐츠별 주제가 정해져 있으면 등록해 두세요. 검수하실 때 골라 쓰시면 매번 다시 입력하지 않으셔도 됩니다.
+        같은 미션이 이미 있으면 덮어쓰지 않고 <b>내용이 더 자세한 쪽으로 합칩니다.</b></p>
+      <p class="why">가이드 한 부에 <b>플랫폼이 여럿 섞여 있고 플랫폼마다 회차 수가 다른 경우</b>가 많습니다.
+        유튜브는 단발성인데 블로그·인스타는 3회차인 식입니다. 또 <b>인플루언서 유형에 따라 담을 내용이 갈리기도</b> 합니다.
+        그래서 <b>플랫폼 · 유형 · 회차</b> 세 가지로 나눠 적습니다.<br>
+        해당 없는 칸은 비워 두시면 <b>전체 공통</b>으로 처리합니다. 축을 안 쓰는 캠페인은 회차만 적으시면 되고,
+        <b>회차를 나누지 않는 단발성이면 이 항목을 통째로 비워 두셔도 됩니다.</b></p>
+      <div id="rdBox"></div>
+      <button class="btn ghost sm mt14" id="rdAdd">미션 추가</button>
+    </div>
+
+    <div class="field"><span class="lbl">직접 만드는 규칙</span>
+      <p class="why">위 항목으로 표현이 안 되는 것만 넣으시면 됩니다. 예를 들어 "용량은 mL로 표기" 같은 캠페인 고유 규칙입니다.</p>
+      <div style="display:flex;gap:11px;align-items:flex-end;flex-wrap:wrap;margin:18px 0">
+        <div style="flex:1 1 250px"><label class="f">종류</label>
+          <select id="rType">
+            <option value="must">포함 필수 — 이 문구가 반드시 있어야 합니다</option>
+            <option value="ban">포함 금지 — 이 문구가 있으면 안 됩니다</option>
+            <option value="replace">치환 권장 — 잘못된 표기를 바른 표기로</option>
+            <option value="cond">조건부 필수 — A가 나오면 B도 있어야 합니다</option>
+          </select></div>
+        <div style="flex:0 0 140px"><label class="f">티어</label>
+          <select id="rTier"><option value="1">1 · 게재 불가</option><option value="2" selected>2 · 수정 필요</option><option value="3">3 · 권고</option></select></div>
+        <button class="btn sm" id="rAdd">추가</button>
+      </div>
+      <div id="rBox"></div>
+    </div>
+  </div></div>
+
+  <div class="sheet"><div class="shead"><span class="snum">05</span><div class="stitle">
+    <h2>이번 콘텐츠 정보</h2><p>콘텐츠마다 바뀌는 항목입니다. 비워 두셔도 검수는 돌아가지만, 주제를 넣으셔야 "가이드대로 썼는지"를 볼 수 있습니다.<br>
+      <b>회차를 나누지 않는 단발성 캠페인이라면 미션 선택은 그냥 두고 주제만 적으시면 됩니다.</b></p>
+  </div></div><div class="sbody">
+    <div class="field">
+      <div class="row col2">
+        <div><label class="f">인플루언서 유형</label>
+          <p class="why">유형에 따라 담을 내용이 갈리는 가이드에서만 씁니다. 아니면 비워 두세요.</p>
+          <input type="text" id="mType" placeholder="예) 펫"></div>
+        <div><label class="f">미션 선택</label>
+          <p class="why">위 프리셋 중 <b>지금 고른 플랫폼과 유형에 맞는 것만</b> 보여 드립니다.</p>
+          <select id="rdPick"><option value="">직접 입력</option></select>
+          <div class="hint" id="rdCount"></div></div>
+      </div>
+      <div class="row">
+        <div><label class="f">회차 주제 <span class="src ai">AI</span></label>
+          <p class="why">"제대로 소구했는가"를 AI가 이 기준으로 봅니다. 가이드의 주제 문장을 그대로 옮기시면 됩니다.
+            <b>비워 두시면 이 항목만 건너뛰고</b> 나머지 검수는 그대로 돌아갑니다.</p>
+          <textarea id="mTopic" placeholder="예) 1주차 첫인상과 제형 소개 — 개봉부터 첫 사용까지를 담되, 본인 피부 고민과 연결해서 써야 함"></textarea></div>
+      </div>
+      <div class="row col2">
+        <div><label class="f">필수 키워드 <span class="src">기계</span></label>
+          <p class="why"><b>원고에 반드시 들어가야 하는 말</b>이 있으면 넣어 주세요. 적어 두신 말이 원고에 있는지만 기계가 확인합니다.<br>가이드가 「필수 키워드」「반드시 포함」이라고 못 박은 것만 넣으시면 됩니다. 그 회차에서 다루는 기능 이름이라고 해서 꼭 필수 키워드인 것은 아닙니다.</p>
+          <input type="text" id="mKeys" placeholder="예) 딥배리어, 마이크로수분캡슐">
+          <div class="hint">쉼표로 구분해 주세요.</div></div>
+        <div><label class="f">타깃 설명 <span class="src ai">AI</span></label>
+          <p class="why">AI가 타깃을 좁게 넘겨짚어 엉뚱한 지적을 하는 걸 막아 줍니다. "20대"만 적으면 30대 이야기를 문제 삼기도 합니다.</p>
+          <input type="text" id="mTarget" placeholder="예) 20대 후반~30대 초반 직장인. 환절기 속건조로 고민하는 층"></div>
+      </div>
+      <div class="row">
+        <div><label class="f">이번 회차 추가 요청 <span class="src ai">AI</span></label>
+          <p class="why">가이드에 콘텐츠별로 붙는 세부 요청을 적어 주세요. "왜 이 제품을 골랐는지 더 들어가면 좋겠다" 같은 내용입니다.</p>
+          <textarea id="mNote" placeholder="예) 좋았다는 감상만 나열하는 내용은 지양, 본인 피부 고민과 연결된 사용기 중심"></textarea></div>
+      </div>
+    </div>
+  </div></div>
+
+</div></div></section>
+
+<section class="panel" id="p-ai">
+  <div class="sheet"><div class="shead"><span class="snum">AI</span><div class="stitle">
+    <h2>AI 검수 설정</h2><p>기계가 못 잡는 것 — 맞춤법, 주제 부합, 리스크 표현, 말투 — 을 맡깁니다. 실행은 검수 화면에서 이뤄집니다.</p>
+  </div></div><div class="sbody">
+    <div class="field">
+      <label class="f">방식</label>
+      <div class="mode" id="aiMode" style="margin:10px 0 18px">
+        <button data-m="key" class="on">키 넣고 자동</button><button data-m="copy">프롬프트 복사</button>
+      </div>
+      <div class="warn">
+        <b>전송되는 내용:</b> 원고 전문 · 가이드 파일 전문 · 캠페인 설정(제품명, 해시태그, 필수 고지 문구, 참고 자료) · 회차 정보.
+        즉 이 도구에 입력하신 <b>거의 모든 내용이 함께 나갑니다.</b><br><br>
+        전송 여부와 그에 따른 <b>책임은 사용자 본인에게 있습니다.</b> 사용 전 소속 회사의 보안 규정, 클라이언트와의 비밀유지 계약,
+        해당 AI 서비스의 데이터 처리 정책을 반드시 확인해 주세요. 미공개 제품 정보나 클라이언트 자료가 포함되어 있다면 전송하지 마십시오.
+        <span id="copyWarn" style="display:none"><br><br>복사한 프롬프트에도 위 내용이 그대로 담깁니다. <b>복사 후에는 도구가 관여할 수 없습니다.</b>
+        회사에서 승인한 AI인지 확인하신 뒤 사용해 주세요.</span>
+      </div>
+    </div>
+    <div class="field" id="aiKeyBox">
+      <div class="row">
+        <div><label class="f">제공사</label>
+          <select id="aiProv"><option value="anthropic">Anthropic (Claude)</option><option value="openai">OpenAI</option>
+          <option value="gemini">Google Gemini</option><option value="custom">직접 입력 (OpenAI 호환)</option></select>
+          <div class="hint">제공사만 고르시면 기본 모델로 돌아갑니다. 모델을 직접 지정하고 싶을 때만 아래를 펼쳐 주세요.</div></div>
+      </div>
+      <div class="warn" style="margin-bottom:18px">
+        <b>보내는 글이 깁니다.</b> 원고 전문 · 가이드 전문 · 설정을 한 번에 보내기 때문에, 요청당 글자 수가 많습니다.
+        <b>무료 등급</b>(예: 무료로 쓰는 Gemini)은 길이 제한이나 사용량 제한에 자주 걸려 오류가 납니다.
+        유료로 구독 중인 AI가 있다면 위 「방식 · 프롬프트 복사」로 그 서비스 화면에 직접 붙여 넣는 편이 안정적입니다.
+      </div>
+      <details class="dict" style="margin-bottom:20px"><summary>모델 직접 지정</summary>
+        <input type="text" id="aiModel" placeholder="비워 두시면 기본 모델을 씁니다" class="mt12">
+        <div class="hint">API 키로는 모델이 정해지지 않습니다. 특정 모델을 쓰셔야 할 때만 이름을 넣어 주세요.</div>
+      </details>
+      <div class="row" id="aiUrlRow" style="display:none">
+        <div><label class="f">엔드포인트 주소</label><input type="text" id="aiUrl" placeholder="예) https://내부게이트웨이주소/v1/chat/completions"></div>
+      </div>
+      <div class="row"><div><label class="f">API 키</label><input type="password" id="aiKey" placeholder="각자 발급하신 키를 넣어 주세요">
+        <div class="hint">파일을 다른 분께 전달하셔도, 설정 파일을 내보내셔도 <b>키는 따라가지 않습니다.</b></div>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--ink2);cursor:pointer">
+          <input type="checkbox" id="aiNoSave"> 이 브라우저에 키를 저장하지 않기</label>
+        <div class="hint">켜 두시면 창을 닫을 때 키가 지워집니다. <b>회사 보안 규정상 키를 기기에 남길 수 없을 때</b> 쓰세요.
+          대신 다시 여실 때마다 키를 넣으셔야 합니다.</div></div></div>
+    </div>
+    <div class="field"><label class="f">AI에게 맡길 항목</label><div id="aiTasks"></div></div>
+  </div></div>
+</section>
+
+<section class="panel" id="p-rev">
+  <div class="sheet"><div class="shead"><span class="snum">01</span><div class="stitle">
+    <h2>검수 기준</h2><p>어느 플랫폼 기준으로 볼지 먼저 정합니다. 글자 수 · 이미지 수 · 광고 고지 기준이 여기서 결정됩니다.</p>
+  </div></div><div class="sbody">
+    <div class="field" style="margin:0">
+      <label class="f">검수 기준 플랫폼</label>
+      <p class="why"><b>파일 형식과는 관계없습니다.</b> 목록은 <b>설정 → 04 캠페인 설정 → 플랫폼</b>에서 직접 만드신 것입니다.</p>
+      <select id="plSel"><option value="">— 고르세요 —</option></select>
+    </div>
+  </div></div>
+
+  <div class="sheet"><div class="shead"><span class="snum">02</span><div class="stitle">
+    <h2>원고 올리기</h2><p>워드 · 파워포인트 · 엑셀을 읽습니다.</p>
+  </div></div><div class="sbody">
+    <div class="drop" id="drop">
+      <iconify-icon icon="solar:cloud-upload-linear"></iconify-icon>
+      <b>파일을 끌어다 놓거나 눌러서 선택해 주세요</b>
+      <small>.docx · .pptx · .xlsx — 규칙 검수는 인터넷 없이 이 브라우저 안에서 끝납니다</small>
+      <input type="file" id="file" accept=".docx,.pptx,.xlsx" hidden></div>
+    <div id="fileMsg"></div>
+  </div></div>
+  <div class="sheet" id="blockCard" style="display:none"><div class="shead"><span class="snum">03</span><div class="stitle">
+    <h2>본문 지정</h2><p>글자 수를 셀 대상입니다. 가장 그럴듯한 것을 골라 두었으니 다르면 눌러서 바꿔 주세요.<br>여러 명의 원고가 한 파일에 있으면 오른쪽 목록에서 <b>작성자도 지정하실 수 있습니다.</b></p>
+  </div></div><div class="sbody">
+    <div id="blockHead"></div>
+    <div class="blocks" id="blocks"></div>
+    <div id="runWhy" style="margin-top:24px"></div>
+    <div class="btnrow"><button class="btn red" id="run">검수 실행</button>
+      <span class="hint" id="runHint" style="margin:0"></span></div>
+  </div></div>
+  <div id="result"></div>
+</section>
+
+<section class="panel" id="p-his">
+  <div class="sheet"><div class="shead"><span class="snum">01</span><div class="stitle">
+    <h2>검수 이력</h2><p>검수하실 때마다 한 줄씩 쌓입니다. CSV로 내보내면 엑셀에서 열립니다.</p>
+  </div></div><div class="sbody" style="padding:22px 30px">
+    <div id="histBox"></div>
+    <div class="btnrow" style="margin-top:20px"><button class="btn ghost sm" id="csvOut">CSV 내보내기</button>
+      <button class="btn ghost sm" id="csvClear">이력 비우기</button></div>
+  </div></div>
+</section>
+</main>
+
+<footer class="foot">
+  <div class="fl">
+    <svg viewBox="0 0 44 30" aria-hidden="true"><path d="M15 4 L22 10 L29 4 L27 2 L22 6 L17 2 Z"/><path d="M20 10 L24 10 L23.2 13 L20.8 13 Z"/><path d="M20.8 13 L23.2 13 L25 23 L22 27 L19 23 Z"/></svg>
+    <b data-app>검대리</b><span data-ver>v1.0.2</span>
+  </div>
+  <p>기계와 AI가 1차로 훑고, 최종 판단은 사람이 합니다.</p>
+  <p><b>원고는 서버로 전송되지 않습니다.</b> 파일을 읽고 검수하고 검수본을 만드는 일은 전부 이 브라우저 안에서 끝납니다.<br>
+    다만 <b>AI 검수는 다릅니다.</b> 원고 전문 · 가이드 전문 · 캠페인 설정이 해당 AI 제공사 서버로 전송됩니다.
+    전송 여부와 그에 따른 <b>책임은 사용자 본인에게 있습니다.</b> 사용 전에 회사 보안 규정, 클라이언트와의 비밀유지 계약,
+    해당 AI 서비스의 데이터 처리 정책을 반드시 확인해 주세요. 미공개 제품 정보나 클라이언트 자료가 담겨 있다면 전송하지 마십시오.</p>
+  <p>Source-available · 개인적·비상업적 평가만 허용됩니다. 수정·재배포·상업적 이용은 사전 서면 허가가 필요합니다. 자세한 내용은 저장소의 LICENSE를 확인해 주세요.</p>
+</footer>
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   검대리 — 인플루언서·체험단 원고 검수 도구
+   Source-Available Evaluation License · All rights reserved
+
+   가이드 파일과 원고 파일을 그대로 넣으면,
+   검수 결과를 원본 파일에 코멘트·셀로 기입해 돌려줍니다.
+   워드·파워포인트·엑셀을 읽고, 플랫폼은 사용자가 직접 정의합니다.
+   모든 처리는 이 브라우저 안에서 끝납니다. (AI 검수 제외)
+
+   ─────────────────────────────────────────────────────────────
+   [변경 이력]
+
+   v1.0.2  2026-09-16  공개 저장소 정리: GitHub Pages/CI, 내부 파일명 정리.
+   v1.0.0  2026-07-24  최초 배포.
+
+     특정 캠페인에 매여 있던 검수 도구를 어느 캠페인·어느 업종에서나 쓸 수 있게 다시 만들었습니다.
+     설정으로 풀 수 있는 것은 설정으로 빼고, 설정으로 풀 수 없는 것은 도구가 알아서 하도록 했습니다.
+
+     읽고 쓰기
+       · 워드 · 파워포인트 · 엑셀을 가이드와 원고 양쪽에서 읽고, 검수 결과를 원본 파일에 기입
+       · 라이브러리 없이 브라우저 기능만으로 ZIP과 Office XML을 직접 다룸
+       · 검수본을 만들 때 손대지 않은 사진·동영상은 압축된 그대로 옮김 (20MB 원고 0.4초)
+       · 한글 문서·PDF는 읽지 못하며, 그 사실을 안내
+
+     검수 기준
+       · 플랫폼을 사용자가 직접 정의. 파일 형식과는 아무 관계 없음
+       · 미션 프리셋을 플랫폼 × 회차 × 인플루언서 유형 3축으로
+       · 표 머리말 사전을 사용자 설정으로. 고지 문구 표기는 기호 종류를 가리지 않고 인식
+       · 사전은 비워서 배포. 업종마다 달라서 미리 채우면 오탐만 남
+
+     사람 나누기
+       · 표 머리말·이름 표기 여러 형태로 자동 인식
+       · 실패하면 검수자가 직접 지정. AI가 구분해 내면 그 기준으로 다시 나눔
+       · 나누지 못한 경우 그 사실을 검수 결과와 검수본에 명시
+
+     사진
+       · 파일에 실제로 들어 있는 사진을 기준으로 셈. 사진마다 파일 안의 고유 번호를 붙여 관리
+       · 사진이 없는 촬영 기획안은 마지막 수단으로 계획 번호를 읽되 그 사실을 밝힘
+       · 체크와 메모는 화면이 아니라 데이터에 보관. 다시 그려도 커서 자리까지 유지
+
+     기계와 AI
+       · 규칙으로 판정되는 것은 기계가, 판단이 필요한 것은 AI가
+       · AI가 기계 결과를 덮어쓰지 않고 합침. 틀린 것만 빼고 나머지는 유지
+       · 가이드는 자르지 않고 통째로 전달. 한계를 넘으면 몇 자가 빠졌는지 알림
+
+     설정과 안전장치
+       · 캠페인 설정 전체 자동 저장 + 설정 파일 내보내기·불러오기 + 새 캠페인 시작
+       · 브라우저 저장 실패와 손상된 설정을 조용히 넘기지 않고 알림
+       · API 키를 이 기기에 남기지 않는 선택지 제공
+       · 검수 결과에서 잘못 잡힌 지적을 직접 빼고 되살릴 수 있음
+
+     그 밖에
+       · 회귀 테스트 45항목 (test/run.js)
+
+   ※ 버전 규칙 — 앞자리: 큰 개편 / 가운데: 기능 추가 / 끝: 오류 수정
+   ※ 수정하실 때 이 목록에 한 줄씩 남겨 주세요.
+   ─────────────────────────────────────────────────────────────
+   [파일 구성]  src/ 폴더에서 나눠 작업하고 build.sh 로 합칩니다.
+     head.html      문서 머리말
+     body.html      화면 구조
+     style.css      디자인
+     core.js        공통 도구 · 브라우저 저장소         ← 이 파일
+     zip.js         ZIP 압축 해제와 재작성
+     parser.js      워드 · PPT · 엑셀 · 가이드 읽기
+     rules.js       기본 검수 항목 · 사전 · 검수 엔진
+     ai.js          AI 통신과 프롬프트
+     settings.js    설정 화면 · 가이드에서 뽑아내기
+     review.js      검수 실행 · 검수본 · 이력
+     rail.js        설정 색인 스크롤 감지
+     footer.html    푸터
+
+   ※ 자바스크립트 여섯 개는 build.sh 가 위 순서대로 이어 붙여 하나의 스크립트가 됩니다.
+     파일이 나뉘어 있어도 서로의 함수와 값을 그대로 씁니다.
+     순서를 바꾸면 시작할 때 아직 없는 값을 쓰게 되므로 바꾸지 마십시오.
+   ═══════════════════════════════════════════════════════════════ */
+
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+let storeWarned=false;
+const mem={};
+/* 브라우저에 저장할 때 쓰는 이름은 모두 v4_ 로 시작합니다.
+   이전 판에서 쓰던 v3_ 값은 기준이 크게 달라져 그대로 쓸 수 없으므로 버립니다.
+   나중에 저장 구조가 또 바뀌면 v5_ 로 한꺼번에 올리면 됩니다. 섞어 쓰면 어느 게 최신인지 알 수 없게 됩니다. */
+const S={get(k){try{const v=localStorage.getItem(k);return v===null?(k in mem?mem[k]:null):v}catch(e){return k in mem?mem[k]:null}},
+         set(k,v){mem[k]=v;
+           try{localStorage.setItem(k,v);storeWarned=false}
+           catch(e){
+             /* 브라우저 저장 공간이 꽉 차면 조용히 실패한다.
+                그대로 두면 「저장한 줄 알았는데 다음 날 옛날 값으로 돌아가 있는」 상황이 된다.
+                한 번은 반드시 알린다. */
+             if(!storeWarned){storeWarned=true;
+               setTimeout(()=>alert('설정을 이 브라우저에 저장하지 못했습니다.\n\n'
+                 +'저장 공간이 꽉 찼거나 브라우저가 저장을 막고 있습니다.\n'
+                 +'창을 닫으면 지금 설정이 사라질 수 있으니, 설정 탭에서 「설정 파일로 저장」을 눌러 두세요.'),0)}
+           }}};
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+/* Office 파일은 한글을 &#50476; 같은 숫자 참조로 저장하기도 한다.
+   이걸 안 풀면 표 머리말을 못 읽어 열 역할 판정이 통째로 실패한다. */
+const dec=s=>String(s)
+  .replace(/&#x([0-9a-fA-F]+);/g,(m,h)=>String.fromCodePoint(parseInt(h,16)))
+  .replace(/&#(\d+);/g,(m,d)=>String.fromCodePoint(+d))
+  .replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&');
+const TD=new TextDecoder('utf-8'),TE=new TextEncoder();
+const lines=s=>(s||'').split('\n').map(x=>x.trim()).filter(Boolean);
+const commas=s=>(s||'').split(',').map(x=>x.trim()).filter(Boolean);
+const tagsOf=s=>[...new Set((s||'').match(/#[^\s#,\n]+/g)||[])];
+const HAN=/[가-힣]/,LAT=/[A-Za-z]/;
+/* 가이드는 통째로 넘겨야 한다. 예전에는 말없이 잘라서, 뒷부분에만 있는 내용을
+   AI가 「가이드에 없다」고 판단하는 일이 생겼다. 지금 모델들은 이 정도는 충분히 받는다.
+   그래도 한계는 있으므로 넘치면 화면에 몇 자가 빠졌는지 알려 준다. */
+const GUIDEMAX=200000, REFMAX=20000;
+function guideForAI(){
+  const t=guideText||'';
+  return t.length<=GUIDEMAX?t
+    :t.slice(0,GUIDEMAX)+`\n\n[여기서 잘렸습니다 — 가이드 전체 ${t.length.toLocaleString()}자 중 ${GUIDEMAX.toLocaleString()}자만 전달됩니다]`;
+}
+const reEsc=s=>String(s||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+/* 고지 문구를 원고에 적는 모양 — 사용자가 설정에서 고른다.
+   아무 기호도 안 쓰는 회사가 많아서 '쓰지 않음'이면 null 을 돌려주고,
+   기호에 기대던 검사는 다른 방법으로 우회하거나 건너뛴다. */
+/* 고지 문구 표기는 회사마다, 같은 회사 안에서도 사람마다 다르다.
+   예전에는 사용자가 기호를 하나 정하게 했는데, 정한 것과 다르게 쓰면 못 찾고
+   「안 쓴다」고 하면 아예 못 찾았다. 설정으로 풀 문제가 아니라서
+   흔히 쓰는 괄호와 기호를 전부 보는 방식으로 바꿨다.
+   기능명 표기가 아예 없어도 핵심 검사(기능을 언급하면 문구가 따라오는가)는
+   등록해 두신 사전으로 판정하므로 그대로 동작한다. */
+const BRACKETS=[['[',']'],['(',')'],['「','」'],['『','』'],['【','】'],['〔','〕'],['〈','〉'],['<','>']];
+const MARKRE=/^\s*[*※•·‧▪∙◦＊◆▶□■+\-–—]\s*\S/;
+/* 고지 문구에 흔히 들어가는 말투 — 기호 없이 문장으로만 적는 경우를 잡는다 */
+const NOTICERE=/개인차|개인의|다를 수 있|상이할|차이가 있을|기준입니다|조건에 따라|따라 다|보장하지|해당하지|아닐 수|의미하지|참고용|자사 (?:시험|기준)|시험 조건/;
+const isMarkLine=l=>MARKRE.test(l);
+function headName(l){                       // 「[기능명]」 형태를 괄호 종류 상관없이 읽는다
+  const s2=String(l).trim();
+  for(const[o,c]of BRACKETS){
+    if(s2.length>=4&&s2.length<=32&&s2.startsWith(o)&&s2.endsWith(c)){
+      const n=s2.slice(o.length,s2.length-c.length).trim();
+      if(n&&n.length>=2&&!/[.。!?]$/.test(n))return n;
+    }
+  }
+  return null;
+}
+
+function findTerm(text,term){
+  if(!term)return -1;let i=-1;
+  while((i=text.indexOf(term,i+1))>=0){
+    const prev=i>0?text[i-1]:'';
+    if(!prev)return i;
+    if(HAN.test(term[0])&&HAN.test(prev))continue;
+    if(LAT.test(term[0])&&LAT.test(prev))continue;
+    return i;
+  }return -1;
+}
+const hasTerm=(t,x)=>findTerm(t,x)>=0;
+const stripTags=t=>t.replace(/#[^\s#]+/g,' ');
+const norm=t=>t.replace(/\s+/g,'');
+
+/* ══════════════════════════════════════════════════════
+   zip.js  —  ZIP 압축 해제와 재작성
+   워드·파워포인트·엑셀은 모두 ZIP 안에 XML이 든 형식입니다.
+   브라우저에 들어 있는 압축 기능만 써서 직접 다룹니다. 외부 라이브러리는 쓰지 않습니다.
+   ══════════════════════════════════════════════════════ */
+
+/* ══════ ZIP ══════ */
+async function unzip(buf){
+  const dv=new DataView(buf),u8=new Uint8Array(buf);let eocd=-1;
+  for(let i=buf.byteLength-22;i>=0;i--){if(dv.getUint32(i,true)===0x06054b50){eocd=i;break}}
+  if(eocd<0)throw new Error('ZIP 형식이 아닙니다');
+  const n=dv.getUint16(eocd+10,true);let off=dv.getUint32(eocd+16,true);const out={};
+  for(let i=0;i<n;i++){
+    const method=dv.getUint16(off+10,true),crc=dv.getUint32(off+16,true);
+    const csize=dv.getUint32(off+20,true),usize=dv.getUint32(off+24,true);
+    const nlen=dv.getUint16(off+28,true),elen=dv.getUint16(off+30,true),clen=dv.getUint16(off+32,true);
+    const lo=dv.getUint32(off+42,true),name=TD.decode(u8.subarray(off+46,off+46+nlen));
+    const lnl=dv.getUint16(lo+26,true),lel=dv.getUint16(lo+28,true),ds=lo+30+lnl+lel;
+    /* 검사값(crc)과 원래 크기(usize)도 같이 들고 있는다.
+       손대지 않은 파일을 그대로 옮길 때 이 값을 다시 계산하지 않기 위해서다. */
+    out[name]={method,crc,usize,raw:u8.subarray(ds,ds+csize)};off+=46+nlen+elen+clen;
+  }return out;
+}
+async function inflate(u8){
+  /* 압축 해제는 브라우저 기능을 그대로 쓴다. 크롬·엣지 80, 사파리 16.4, 파이어폭스 113 이상이면 된다.
+     예전 안내는 크롬·엣지만 적어 두어서, 다른 브라우저를 쓰는 분께 잘못된 정보를 드리고 있었다. */
+  if(!('DecompressionStream'in window))
+    throw new Error('이 브라우저에서는 파일을 열 수 없습니다. 크롬 · 엣지 · 사파리 · 파이어폭스의 최신 버전에서 열어 주세요');
+  return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+}
+async function deflate(u8){if(!('CompressionStream'in window))return null;
+  return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer());}
+async function readEntry(z,n){const e=z[n];if(!e)return null;return TD.decode(e.method===8?await inflate(e.raw):e.raw)}
+async function rawEntry(z,n){const e=z[n];if(!e)return null;return e.method===8?await inflate(e.raw):e.raw}
+const CRCT=(()=>{const t=new Uint32Array(256);for(let i=0;i<256;i++){let c=i;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[i]=c>>>0}return t})();
+function crc32(u8){let c=0xFFFFFFFF;for(let i=0;i<u8.length;i++)c=CRCT[(c^u8[i])&0xFF]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+/* 검수본을 만들 때 우리가 고치는 것은 글이 든 XML 몇 개뿐이다.
+   사진과 동영상은 손대지 않으므로, 압축을 풀었다가 다시 압축하고 검사값까지 새로 계산할 이유가 없다.
+   예전에는 그렇게 해서 50MB짜리 원고를 열면 화면이 몇 초씩 멈췄고,
+   게다가 미디어가 압축되지 않은 채로 다시 담겨 파일이 원본보다 커졌다.
+   지금은 손대지 않은 항목을 압축된 그대로, 원본 검사값과 함께 옮긴다.
+
+   files 항목은 두 가지 형태를 받는다.
+     {name, data}  — 우리가 새로 만든 내용
+     {name, copy}  — 원본에서 그대로 옮길 항목 (unzip 이 준 값을 그대로 넘기면 된다) */
+async function makeZip(files){
+  const parts=[],cds=[];let off=0;
+  for(const f of files){
+    let data,method,crc,usize;
+    if(f.copy){
+      data=f.copy.raw;method=f.copy.method;crc=f.copy.crc;usize=f.copy.usize;
+    }else{
+      const isXml=/\.(xml|rels)$/i.test(f.name);data=f.data;method=0;
+      if(isXml){const d=await deflate(f.data);if(d&&d.length<f.data.length){data=d;method=8}}
+      crc=crc32(f.data);usize=f.data.length;
+    }
+    const nb=TE.encode(f.name);
+    const lh=new Uint8Array(30+nb.length),ldv=new DataView(lh.buffer);
+    ldv.setUint32(0,0x04034b50,true);ldv.setUint16(4,20,true);ldv.setUint16(8,method,true);ldv.setUint16(12,0x21,true);
+    ldv.setUint32(14,crc,true);ldv.setUint32(18,data.length,true);ldv.setUint32(22,usize,true);ldv.setUint16(26,nb.length,true);
+    lh.set(nb,30);parts.push(lh,data);
+    const cd=new Uint8Array(46+nb.length),cdv=new DataView(cd.buffer);
+    cdv.setUint32(0,0x02014b50,true);cdv.setUint16(4,20,true);cdv.setUint16(6,20,true);cdv.setUint16(10,method,true);cdv.setUint16(14,0x21,true);
+    cdv.setUint32(16,crc,true);cdv.setUint32(20,data.length,true);cdv.setUint32(24,usize,true);
+    cdv.setUint16(28,nb.length,true);cdv.setUint32(42,off,true);cd.set(nb,46);cds.push(cd);
+    off+=lh.length+data.length;
+  }
+  let cdlen=0;cds.forEach(c=>cdlen+=c.length);
+  const eo=new Uint8Array(22),edv=new DataView(eo.buffer);
+  edv.setUint32(0,0x06054b50,true);edv.setUint16(8,cds.length,true);edv.setUint16(10,cds.length,true);
+  edv.setUint32(12,cdlen,true);edv.setUint32(16,off,true);
+  return new Blob([...parts,...cds,eo],{type:'application/octet-stream'});
+}
+
+/* ══════════════════════════════════════════════════════
+   parser.js  —  워드 · 파워포인트 · 엑셀 · 가이드 파일 읽기
+   ※ src/ 의 자바스크립트 파일들은 build.sh 가 순서대로 이어 붙여
+      하나의 스크립트가 됩니다. 파일이 나뉘어 있어도 서로의
+      함수와 값을 그대로 씁니다. 순서는 바꾸지 마십시오.
+   ══════════════════════════════════════════════════════ */
+
+/* ══════ 문서 파싱 ══════ */
+/* Office 문서의 태그는 상황에 따라 속성이 붙습니다.
+   예를 들어 파워포인트는 배경으로 채운 도형을 <p:sp useBgFill="1"> 로 적습니다.
+   <p:sp> 처럼 꺾쇠까지 딱 맞춰 찾으면 이런 도형을 통째로 놓칩니다.
+   그래서 여는 태그는 항상 <태그[ >] 형태로 찾아 속성이 있든 없든 걸리게 합니다. */
+async function parseDocx(z){
+  const xml=await readEntry(z,'word/document.xml');
+  const paras=xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g)||[];
+  const lines=[];let imgs=0;const imgParas=[];
+  paras.forEach((p,pi)=>{
+    const t=dec((p.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g)||[]).map(x=>x.replace(/<[^>]+>/g,'')).join(''));
+    /* 한 문단에 그림이 둘 이상 들어가는 일이 흔하다.
+       예전에는 문단 하나를 그림 하나로 세서, 그 뒤부터 이미지 번호와 문단이 통째로 밀렸다. */
+    const nImg=(p.match(/<a:blip\b|<w:pict\b/g)||[]).length||(/<w:drawing/.test(p)?1:0);
+    for(let k=0;k<nImg;k++){imgs++;imgParas.push(pi)}
+    if(t.trim())lines.push(t);
+  });
+  const media=Object.keys(z).filter(k=>/^word\/media\//.test(k));
+  const vids=media.filter(k=>/\.(mp4|mov|avi|wmv|gif)$/i.test(k)).length;
+  const text=lines.join('\n');
+  return{type:'docx',blocks:[{id:0,kind:'본문 전체',text,meta:`문단 ${lines.length}개`}],
+    /* 세어 낸 그림 수를 그대로 쓴다. media 폴더 쪽이 더 크더라도(머리말·꼬리말 그림 등)
+       문단 색인과 어긋나므로 기준으로 삼지 않는다 */
+    images:imgs||Math.max(0,media.length-vids),videos:vids,raw:text,imgParas};
+}
+function shapeText(chunk){
+  const ps=chunk.match(/<a:p[ >][\s\S]*?<\/a:p>|<a:p\/>/g)||[];
+  /* <a:t> 에도 xml:space 같은 속성이 붙는 경우가 있어 여는 태그를 통째로 걷어낸다 */
+  return dec((ps.length?ps:[chunk]).map(p=>(p.match(/<a:t[ >][\s\S]*?<\/a:t>/g)||[])
+    .map(x=>x.replace(/^<a:t[^>]*>/,'').replace(/<\/a:t>$/,'')).join('')).join('\n'))
+    .replace(/\n{3,}/g,'\n\n').trim();
+}
+/* 표 머리말 사전 — 어느 열이 무슨 내용인지 알아내는 단어들.
+   회사마다 부르는 이름이 달라서 설정에서 직접 정하게 했다. */
+const HDRDEF={
+  mention:'멘션, 캡션, 본문 내용, 원고 내용, 대본, 나레이션',
+  sub:'역자막, 유의 문구, 필수 고지 문구, 고지 문구, 자막',
+  review:'수정 요청, 피드백, 검수 내용',
+  idx:'이미지 순서, 이미지, 씬, 컷, 화면 구성',
+  person:'인플루언서, 크리에이터, 계정, 작성자, 담당자, 채널명',
+};
+/* 사람 표시 — 회사마다 쓰는 방식이 달라 여러 형태를 본다
+   「계정명님」 · 「@핸들」 · 「[1] 이름」 · 「1. 이름」 · 「크리에이터: 이름」 */
+const WHORE=[/^([^\s\/\n]{2,32})\s*님$/, /^@([A-Za-z0-9._\-]{2,32})$/,
+  /^\[\s*\d{1,2}\s*\]\s*([^\s\/\n]{2,32})$/, /^\d{1,2}\s*[.)]\s*([^\s\/\n]{2,32})$/,
+  /^(?:크리에이터|인플루언서|작성자|계정)\s*[:：]\s*([^\s\/\n]{2,32})$/];
+function whoOf(t){
+  const h=String(t||'').trim().split('\n')[0].trim();
+  for(const re of WHORE){const m=h.match(re);if(m)return m[1]}
+  return null;
+}
+const HDRFIX=[[/필수\s*해시\s*태그|해시태그/,'tag'],[/제목|타이틀/,'title'],[/지원\s*문구|광고\s*고지/,'ad']];
+function hdrWords(k){
+  const el=$('#hdr'+k[0].toUpperCase()+k.slice(1));
+  return commas((el&&el.value)||HDRDEF[k]).map(x=>x.replace(/\s/g,'')).filter(Boolean);
+}
+function roleOf(t){
+  const x=t.replace(/\s/g,'');
+  for(const k of ['mention','sub','review','idx','person'])
+    for(const w of hdrWords(k))if(w&&x.includes(w))return k;
+  for(const[re,r]of HDRFIX)if(re.test(x))return r;
+  return null;
+}
+
+async function parsePptx(z){
+  const names=Object.keys(z).filter(k=>/^ppt\/slides\/slide\d+\.xml$/.test(k)).sort((a,b)=>(+a.match(/\d+/)[0])-(+b.match(/\d+/)[0]));
+  const blocks=[];let images=0,videos=0,id=0;
+  const order=[],pmap={},slidePerson={},slidePics={},slideRids={};let cur=null,hitRole=false;
+  for(const n of names){
+    const sn=+n.match(/\d+/)[0],xml=await readEntry(z,n);
+    /* 사진마다 파일 안의 고유 번호(rId)를 함께 들고 있는다.
+       순번만 쓰면 슬라이드 중간에 사진 하나만 끼워 넣어도 뒤쪽 번호가 전부 밀려서,
+       적어 둔 검수 메모가 엉뚱한 사진에 붙는다. */
+    const picTags=xml.match(/<p:pic[ >][\s\S]*?<\/p:pic>/g)||[];
+    const pics=picTags.length;
+    slideRids[n]=picTags.map((t,i)=>(t.match(/r:embed="([^"]+)"/)||t.match(/r:link="([^"]+)"/)||[,''])[1]||('n'+i));
+    const vids=(xml.match(/<a:videoFile|<p:videoFile/g)||[]).length;
+    images+=pics;videos+=vids;slidePics[n]=pics;
+
+    const shapes=(xml.match(/<p:sp[ >][\s\S]*?<\/p:sp>/g)||[]).filter(sp=>!/<a:tbl/.test(sp)).map(shapeText).filter(t=>t.length>0);
+    let who=null;
+    shapes.forEach(t=>{if(!who)who=whoOf(t)});
+    if(!who&&shapes.length===1){
+      const head=shapes[0].split('\n')[0].trim();
+      if(/^[A-Za-z0-9._\-]{3,32}$/.test(head)&&shapes[0].split('\n').length>=2)who=head;
+    }
+    if(who){cur=who;if(!order.includes(who))order.push(who)}
+    slidePerson[n]=cur;
+
+    const push=(text,role,kind)=>{
+      if(text.length<2)return;
+      blocks.push({id:id++,kind,text,meta:`${text.length}자`,role,person:cur,slide:n,
+        skip:role==='review'||role==='idx'||role==='hdr'});
+    };
+    /* 표 — 셀을 읽는 순서대로 훑으며 머리말이 나오면 그 뒤 셀에 역할을 물려준다 */
+    const KO={mention:'본문',sub:'고지 문구',review:'검수란',idx:'이미지 순서',tag:'해시태그',title:'제목',ad:'광고 고지'};
+    (xml.match(/<a:tbl[ >][\s\S]*?<\/a:tbl>/g)||[]).forEach(tb=>{
+      const colRole=[];
+      (tb.match(/<a:tr[ >][\s\S]*?<\/a:tr>/g)||[]).forEach(tr=>{
+        const cells=(tr.match(/<a:tc[ >][\s\S]*?<\/a:tc>/g)||[]).map(shapeText);
+        const hdr=cells.map(t=>t&&t.length<=16?roleOf(t):null);
+        const nHdr=hdr.filter(Boolean).length,nCell=cells.filter(t=>t&&t.length>0).length;
+        if(nHdr)hitRole=true;
+        if(nHdr&&nHdr===nCell){                        // 머리말만 있는 행 → 열마다 역할을 기억
+          hdr.forEach((r,ix)=>{if(r)colRole[ix]=r});
+          if(nHdr===1){const only=hdr.find(Boolean);for(let k=0;k<10;k++)if(!colRole[k])colRole[k]=only}
+          cells.forEach(t=>{if(t)push(t,'hdr',`슬라이드 ${sn} · 머리말`)});
+          return;
+        }
+        const rowRole=nHdr?hdr.find(Boolean):null;      // 머리말 + 내용이 한 행에 섞인 경우
+        cells.forEach((t,ix)=>{
+          if(!t)return;
+          if(hdr[ix]){push(t,'hdr',`슬라이드 ${sn} · 머리말`);return}
+          const role=rowRole||colRole[ix]||'etc';
+          push(t,role,`슬라이드 ${sn} · ${KO[role]||'표'}`);
+        });
+      });
+    });
+    shapes.forEach(t=>push(t,'etc',`슬라이드 ${sn} · 텍스트`));
+    if(cur){pmap[cur]=pmap[cur]||{name:cur,images:0,videos:0};pmap[cur].images+=pics;pmap[cur].videos+=vids}
+  }
+  const media=Object.keys(z).filter(k=>/^ppt\/media\//.test(k));
+  if(!videos)videos=media.filter(k=>/\.(mp4|mov|avi|wmv)$/i.test(k)).length;
+  const people=order.map(o=>pmap[o]).filter(Boolean);
+  people.forEach(pp=>pp.blocks=blocks.filter(b=>b.person===pp.name));
+  const rawOf=bs=>bs.filter(b=>b.role!=='review'&&b.role!=='idx'&&b.role!=='hdr').map(b=>b.text).join('\n');
+  people.forEach(pp=>pp.raw=rawOf(pp.blocks));
+  return{type:'pptx',blocks,images,videos,raw:rawOf(blocks),people,slidePerson,slidePics,slideRids,roleFound:hitRole};
+}
+
+/* ══ 엑셀 ══
+   docx·pptx 와 같은 ZIP + XML 구조라 앞의 ZIP 코드를 그대로 쓴다.
+   엑셀은 셀이 곧 표라서 「어느 열이 무슨 내용인지」 판정이 오히려 가장 정확하다.
+   다만 쓰기는 다르다. 셀 코멘트는 그리기 객체(vml)까지 손대야 해서 파일이 깨지기 쉽다.
+   그래서 「검수 의견」 열을 오른쪽에 덧붙이고, 요약은 새 시트로 넣는다. */
+const colIdx=ref=>{const m=String(ref).match(/^([A-Z]+)/);if(!m)return 0;
+  let n=0;for(const ch of m[1])n=n*26+(ch.charCodeAt(0)-64);return n-1};
+const colRef=i=>{let s='',n=i+1;while(n>0){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26)}return s};
+const xesc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+async function xlsxStrings(z){
+  const xml=await readEntry(z,'xl/sharedStrings.xml');if(!xml)return[];
+  return(xml.match(/<si>[\s\S]*?<\/si>/g)||[]).map(si=>
+    dec((si.match(/<t[^>]*>([\s\S]*?)<\/t>/g)||[]).map(x=>x.replace(/<[^>]+>/g,'')).join('')));
+}
+async function xlsxSheets(z){
+  const wb=await readEntry(z,'xl/workbook.xml'),rels=await readEntry(z,'xl/_rels/workbook.xml.rels')||'';
+  const rmap={};
+  (rels.match(/<Relationship[^>]*>/g)||[]).forEach(r=>{
+    const id=(r.match(/Id="([^"]+)"/)||[])[1],tg=(r.match(/Target="([^"]+)"/)||[])[1];
+    if(id&&tg)rmap[id]=tg.replace(/^\/?xl\//,'').replace(/^\.\//,'');
+  });
+  const out=[];
+  (wb?(wb.match(/<sheet [^>]*\/?>/g)||[]):[]).forEach(s=>{
+    const nm=dec((s.match(/name="([^"]*)"/)||[,''])[1]),rid=(s.match(/r:id="([^"]+)"/)||[])[1];
+    out.push({name:nm||('시트'+(out.length+1)),path:'xl/'+(rmap[rid]||`worksheets/sheet${out.length+1}.xml`)});
+  });
+  if(!out.length)Object.keys(z).filter(k=>/^xl\/worksheets\/sheet\d+\.xml$/.test(k))
+    .sort((a,b)=>(+a.match(/\d+/)[0])-(+b.match(/\d+/)[0]))
+    .forEach((k,i)=>out.push({name:'시트'+(i+1),path:k}));
+  return out;
+}
+async function xlsxGrid(z,path,sst){
+  const xml=await readEntry(z,path);if(!xml)return[];
+  return(xml.match(/<row[ >][\s\S]*?<\/row>|<row[^>]*\/>/g)||[]).map(r=>{
+    const tmp={};let last=-1;
+    (r.match(/<c[ >][\s\S]*?<\/c>|<c[^>]*\/>/g)||[]).forEach(c=>{
+      const ref=(c.match(/r="([A-Z]+\d+)"/)||[])[1],t=(c.match(/\st="([^"]+)"/)||[])[1]||'n';
+      let v='';
+      if(t==='inlineStr'){const is=(c.match(/<is>([\s\S]*?)<\/is>/)||[,''])[1];
+        v=dec((is.match(/<t[^>]*>([\s\S]*?)<\/t>/g)||[]).map(x=>x.replace(/<[^>]+>/g,'')).join(''));}
+      else{const raw=(c.match(/<v>([\s\S]*?)<\/v>/)||[,''])[1];v=t==='s'?(sst[+raw]||''):dec(raw)}
+      /* 중간이 비는 배열을 만들면 자바스크립트 엔진이 느린 방식으로 바꿔 버린다.
+         일단 자리 번호로 모아 두었다가, 행이 끝나면 빈칸 없는 배열로 한 번에 만든다. */
+      const at=ref?colIdx(ref):Object.keys(tmp).length;
+      tmp[at]=v.trim();if(at>last)last=at;
+    });
+    const cells=new Array(last+1);
+    for(let i=0;i<=last;i++)cells[i]=tmp[i]!==undefined?tmp[i]:'';
+    return cells;
+  });
+}
+async function parseXlsx(z){
+  const sst=await xlsxStrings(z),sheets=await xlsxSheets(z);
+  const blocks=[];let id=0,hitRole=false;
+  const order=[],pmap={},cellMap=[];let cur=null;
+  const KO={mention:'본문',sub:'고지 문구',review:'검수란',idx:'이미지 순서',
+            tag:'해시태그',title:'제목',ad:'광고 고지',person:'작성자'};
+  for(const sh of sheets){
+    const grid=await xlsxGrid(z,sh.path,sst);
+    const colRole=[];let widest=0;
+    grid.forEach((row,ri)=>{
+      const hdr=row.map(t=>t&&t.length<=20?roleOf(t):null);
+      const nHdr=hdr.filter(Boolean).length,nCell=row.filter(t=>t).length;
+      widest=Math.max(widest,row.length);
+      if(nHdr)hitRole=true;
+      if(nHdr&&nHdr>=Math.max(1,Math.ceil(nCell*0.6))){        // 머리말 행 → 열 역할을 기억
+        hdr.forEach((r,ix)=>{if(r)colRole[ix]=r});
+        return;
+      }
+      /* 이 행에 작성자 열이 있으면 그 값이 이후 행의 주인이 된다 */
+      const pi=colRole.findIndex(r=>r==='person');
+      if(pi>=0&&row[pi]){cur=row[pi].trim();if(!order.includes(cur))order.push(cur)}
+      else{for(const t of row){const w=whoOf(t);if(w){cur=w;if(!order.includes(w))order.push(w);break}}}
+      row.forEach((t,ix)=>{
+        if(!t||t.length<2)return;
+        const role=colRole[ix]||'etc';
+        blocks.push({id:id++,kind:`${sh.name} · ${KO[role]||'셀'}`,text:t,meta:`${t.length}자`,
+          role,person:cur,sheet:sh.path,row:ri,col:ix,
+          skip:role==='review'||role==='idx'||role==='hdr'||role==='person'});
+      });
+    });
+    cellMap.push({sheet:sh.path,name:sh.name,cols:widest,rows:grid.length,
+      reviewCol:colRole.findIndex(r=>r==='review')});
+  }
+  const media=Object.keys(z).filter(k=>/^xl\/media\//.test(k));
+  const videos=media.filter(k=>/\.(mp4|mov|avi|wmv)$/i.test(k)).length;
+  order.forEach(o=>pmap[o]={name:o,images:0,videos:0});
+  const people=order.map(o=>pmap[o]).filter(Boolean);
+  people.forEach(pp=>pp.blocks=blocks.filter(b=>b.person===pp.name));
+  const rawOf=bs=>bs.filter(b=>!b.skip&&b.role!=='hdr').map(b=>b.text).join('\n');
+  people.forEach(pp=>pp.raw=rawOf(pp.blocks));
+  return{type:'xlsx',blocks,images:Math.max(0,media.length-videos),videos,
+    raw:rawOf(blocks),people,roleFound:hitRole,sheets:cellMap};
+}
+
+/* 검수본 — 「검수 의견」 열을 오른쪽에 붙이고 요약 시트를 하나 더 넣는다.
+   문자열은 inlineStr 로 쓴다. sharedStrings 를 건드리지 않아 원본이 깨질 위험이 없다. */
+async function annotateXlsx(){
+  const files=[];
+  const summary=summaryLines(null,null,'');
+  for(const name of Object.keys(ZIP)){
+    if(name==='[Content_Types].xml'||name==='xl/workbook.xml'||name==='xl/_rels/workbook.xml.rels'){continue}
+    files.push({name,copy:ZIP[name]});
+  }
+  /* 시트마다 검수 의견 열 추가 */
+  for(const sh of (DOC.sheets||[])){
+    const ix=files.findIndex(f=>f.name===sh.sheet);if(ix<0)continue;
+    /* 여기는 우리가 고칠 시트이므로 압축을 풀어 읽는다. 나머지 파일은 그대로 옮겨진다 */
+    let xml=await readEntry(ZIP,sh.sheet);if(!xml)continue;
+    const grp=LAST.groups;
+    const rowNote={};
+    grp.forEach(g=>{
+      const lines2=summaryLines(g.items,g.v,g.name);
+      const b=(g.doc===DOC?DOC.blocks:g.doc.blocks).find(x=>x.sheet===sh.sheet);
+      if(b)rowNote[b.row]=lines2.join('\n');
+    });
+    const cno=sh.cols||1;
+    xml=xml.replace(/<row([^>]*)r="(\d+)"([^>]*)>([\s\S]*?)<\/row>/g,(m,a,rn,b2,inner)=>{
+      const note=rowNote[+rn-1];if(!note)return m;
+      const ref=colRef(cno)+rn;
+      return `<row${a}r="${rn}"${b2}>${inner}<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xesc(note)}</t></is></c></row>`;
+    });
+    files[ix]={name:sh.sheet,data:TE.encode(xml)};
+  }
+  /* 요약 시트 추가 */
+  const newPath='xl/worksheets/review_summary.xml';
+  const rows=summary.map((t,i)=>
+    `<row r="${i+1}"><c r="A${i+1}" t="inlineStr"><is><t xml:space="preserve">${xesc(t)}</t></is></c></row>`).join('');
+  files.push({name:newPath,data:TE.encode(
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`+
+    `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">`+
+    `<cols><col min="1" max="1" width="110" customWidth="1"/></cols><sheetData>${rows}</sheetData></worksheet>`)});
+
+  let ct=await readEntry(ZIP,'[Content_Types].xml');
+  ct=ct.replace('</Types>',`<Override PartName="/${newPath}" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`);
+  files.push({name:'[Content_Types].xml',data:TE.encode(ct)});
+
+  let rels=await readEntry(ZIP,'xl/_rels/workbook.xml.rels')
+    ||'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
+  const rid='rIdReviewSummary';
+  rels=rels.replace('</Relationships>',
+    `<Relationship Id="${rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/review_summary.xml"/></Relationships>`);
+  files.push({name:'xl/_rels/workbook.xml.rels',data:TE.encode(rels)});
+
+  let wb=await readEntry(ZIP,'xl/workbook.xml');
+  const ids=(wb.match(/sheetId="(\d+)"/g)||[]).map(x=>+x.match(/\d+/)[0]);
+  const nid=(ids.length?Math.max(...ids):0)+1;
+  wb=wb.replace('</sheets>',`<sheet xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"`
+    +` name="검수 결과" sheetId="${nid}" r:id="${rid}"/></sheets>`);
+  files.push({name:'xl/workbook.xml',data:TE.encode(wb)});
+  return makeZip(files);
+}
+
+function guessBody(blocks){
+  const men=blocks.filter(b=>b.role==='mention');
+  if(men.length)return men.map(b=>b.id);
+  if(blocks.length<=1)return blocks.map(b=>b.id);
+  let best=null,bs=-1;
+  blocks.forEach(b=>{if(b.skip)return;let s=b.text.length;
+    if(/#[^\s#]/.test(b.text))s*=2.2;
+    if(/광고|협찬|지원받아/.test(b.text))s*=1.4;
+    if(hdrWords('sub').some(w=>w&&b.text.includes(w))||/출처|시험\s*조건/.test(b.text))s*=.25;
+    if(s>bs){bs=s;best=b.id}});
+  return best===null?[]:[best];
+}
+
+/* ══ 가이드 전용 파서 — 표 구조를 살려서 읽는다 ══ */
+async function parseGuide(z,type){
+  const tables=[],units=[];
+  if(type==='xlsx'){
+    /* 엑셀은 셀이 곧 표라서 역할 판정이 가장 정확하다. 시트 하나를 슬라이드 하나로 본다 */
+    const sst=await xlsxStrings(z);
+    for(const sh of await xlsxSheets(z)){
+      const grid=await xlsxGrid(z,sh.path,sst);
+      const rows=grid.filter(r=>r.some(c=>c));
+      if(!rows.length)continue;
+      tables.push(rows);
+      units.push({texts:[sh.name].concat(rows.flat().filter(Boolean)),tables:[rows]});
+    }
+    return{tables,units,text:units.flatMap(u=>u.texts).join('\n')};
+  }
+  if(type==='pptx'){
+    const names=Object.keys(z).filter(k=>/^ppt\/slides\/slide\d+\.xml$/.test(k))
+      .sort((a,b)=>(+a.match(/\d+/)[0])-(+b.match(/\d+/)[0]));
+    for(const n of names){
+      const xml=await readEntry(z,n),u={texts:[],tables:[]};
+      (xml.match(/<a:tbl[ >][\s\S]*?<\/a:tbl>/g)||[]).forEach(tb=>{
+        const rows=(tb.match(/<a:tr[ >][\s\S]*?<\/a:tr>/g)||[])
+          .map(tr=>(tr.match(/<a:tc[ >][\s\S]*?<\/a:tc>/g)||[]).map(shapeText));
+        if(rows.length){tables.push(rows);u.tables.push(rows)}
+      });
+      (xml.match(/<p:sp[ >][\s\S]*?<\/p:sp>/g)||[]).forEach(sp=>{
+        if(/<a:tbl/.test(sp))return;
+        const t=shapeText(sp);if(t.length>1)u.texts.push(t);
+      });
+      units.push(u);
+    }
+  }else{
+    const xml=await readEntry(z,'word/document.xml');
+    (xml.match(/<w:tbl[ >][\s\S]*?<\/w:tbl>/g)||[]).forEach(tb=>{
+      const rows=(tb.match(/<w:tr[ >][\s\S]*?<\/w:tr>/g)||[]).map(tr=>
+        (tr.match(/<w:tc[ >][\s\S]*?<\/w:tc>/g)||[]).map(tc=>
+          dec((tc.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g)||[]).map(x=>x.replace(/<[^>]+>/g,'')).join('')).trim()));
+      if(rows.length)tables.push(rows);
+    });
+    const paras=(xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g)||[]).map(pp=>
+      dec((pp.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g)||[]).map(x=>x.replace(/<[^>]+>/g,'')).join('')).trim()).filter(Boolean);
+    units.push({texts:paras,tables});
+  }
+  const text=units.map(u=>u.texts.join('\n')+'\n'+u.tables.map(t=>t.map(r=>r.join(' :: ')).join('\n')).join('\n')).join('\n');
+  return{tables,units,text};
+}
+
+/* ══════════════════════════════════════════════════════
+   rules.js  —  기본 검수 항목 · 사전 · 상태 · 규칙 기반 검수 엔진
+   ※ src/ 의 자바스크립트 파일들은 build.sh 가 순서대로 이어 붙여
+      하나의 스크립트가 됩니다. 파일이 나뉘어 있어도 서로의
+      함수와 값을 그대로 씁니다. 순서는 바꾸지 마십시오.
+   ══════════════════════════════════════════════════════ */
+
+/* ══ A층 ══ */
+const DICT={
+rival:``,
+hype:`세계 최초
+국내 최초
+국내 유일
+업계 1위
+판매 1위
+압도적
+완벽한
+완벽하게
+부작용 없는
+무해한
+끝판왕`};
+const IMGBASE=['타사 제품·로고가 함께 찍히지 않았는지','제품이 왜곡·잘리지 않았는지','초점·선명도에 이상이 없는지','구도상 제품이 드러나는지'];
+const BASE=[
+ {k:'rival',on:1,tier:1,who:'기계',t:'타사 제품·브랜드 언급',d:'원고에 경쟁사나 타 브랜드 이름이 있는지 봅니다. 찾을 이름은 캠페인 설정의 사전에 적어 두세요. 사진 속 노출은 사람이 봐야 합니다.',dict:'rival'},
+ {k:'ad',on:1,tier:2,who:'기계',t:'광고 고지',d:'정하신 문구가 본문 상단에 있는지만 확인합니다. 표기 방식이 맞는지는 아래 AI 항목이 봅니다.'},
+ {k:'lead',on:1,tier:2,who:'기계',t:'상단 필수 문구',d:'브랜드 강조 요청이 있을 때 씁니다. 문구를 넣지 않으시면 검사하지 않습니다.'},
+ {k:'banSub',on:1,tier:2,who:'기계',t:'금지 고지 문구',d:'제외하기로 한 문구가 그대로 들어갔는지 봅니다.'},
+ {k:'fnDup',on:1,tier:2,who:'기계',t:'고지 문구 중복',d:'같은 고지 문구가 두 번 이상 나오면 잡습니다.'},
+ {k:'hype',on:1,tier:2,who:'기계',t:'최상급·과장 표현',d:'법무 리스크가 될 수 있는 표현을 넓게 잡습니다. 맥락상 문제없는 건 AI가 걸러 줍니다.',dict:'hype'},
+ {k:'spell',on:1,tier:2,who:'AI',t:'오탈자·맞춤법',d:'띄어쓰기 포함. 브라우저만으로는 불가능해 AI가 맡습니다.'},
+ {k:'risk',on:1,tier:2,who:'AI',t:'법무·사회적 리스크',d:'타사 비교나 사회적으로 문제될 소지가 있는 표현을 봅니다.'},
+ {k:'topic',on:1,tier:2,who:'AI',t:'회차 주제 부합',d:'키워드를 넣었는지가 아니라 의도대로 소구했는지 봅니다.'},
+ {k:'fact',on:1,tier:2,who:'AI',t:'기능 설명 오류',d:'기능명을 잘못 붙였거나 조건을 빠뜨린 설명을 찾습니다.'},
+ {k:'subAcc',on:1,tier:2,who:'AI',t:'고지 문구 정확성',d:'고지 문구 내용이 기능과 맞는지, 최신 문구인지 봅니다.'},
+ {k:'adForm',on:1,tier:2,who:'AI',t:'광고 고지 표기 방식',d:'그 플랫폼 관행에 맞는 방식으로 고지했는지 봅니다. 해시태그로 쓸지 문장으로 쓸지는 플랫폼마다 다릅니다.'},
+ {k:'voice',on:1,tier:3,who:'AI',t:'말투 · 메이커보이스',d:'브랜드가 쓴 것처럼 읽히는 문장을 찾습니다. 판단이 갈릴 수 있어 권고로만 나옵니다.'}
+];
+let base={},dicts={};
+function loadBase(){
+  /* v3 → v4. 예전에 저장된 사전이 새 기본값을 가려서 「바꿨는데 안 바뀐다」는 문제가 있었다.
+     키를 올려서 옛 값을 자연스럽게 버린다. */
+  try{base=JSON.parse(S.get('v4_base')||'{}')}catch(e){base={}}
+  try{dicts=JSON.parse(S.get('v4_dicts')||'{}')}catch(e){dicts={}}
+  BASE.forEach(b=>{if(!(b.k in base))base[b.k]=!!b.on});
+  Object.keys(DICT).forEach(k=>{if(!(k in dicts))dicts[k]=DICT[k]});
+}
+/* 사전은 캠페인마다 채우는 값이라 캠페인 설정에 두었다. A층에는 켜고 끄는 토글만 남는다 */
+const DICTKEYS=['rival','hype'];
+function syncDicts(){DICTKEYS.forEach(k=>{const el=$('#'+k+'Dict');if(el)dicts[k]=el.value});saveBase();saveAll()}
+function fillDicts(){DICTKEYS.forEach(k=>{const el=$('#'+k+'Dict');if(el)el.value=dicts[k]!==undefined?dicts[k]:(DICT[k]||'')})}
+function saveBase(){S.set('v4_base',JSON.stringify(base));S.set('v4_dicts',JSON.stringify(dicts))}
+function drawBase(){
+  $('#baseBox').innerHTML=BASE.map(b=>`<div class="opt">
+    <div class="sw ${base[b.k]?'on':''}" data-k="${b.k}"></div>
+    <div class="tx"><b>${b.t} <span class="chip tb${b.tier}" style="font-size:9px;padding:1px 5px">T${b.tier}</span></b><span>${b.d}</span>
+
+    </div><span class="who ${b.who==='AI'?'ai':''}">${b.who}</span></div>`).join('');
+  $$('#baseBox .sw').forEach(el=>el.onclick=()=>{base[el.dataset.k]=!base[el.dataset.k];saveBase();drawBase();drawAI()});
+}
+
+/* ══ 제품명 변형 ══ */
+function variants(canon,extra){
+  const c=(canon||'').trim();if(!c)return[];
+  const v=new Set(),up=c.toUpperCase(),lo=c.toLowerCase();
+  if(up!==c)v.add(up); if(lo!==c)v.add(lo);
+  if(/\s/.test(c))v.add(c.replace(/\s+/g,''));
+  else if(HAN.test(c)&&c.length>=4&&c.length<=8)for(let i=2;i<=c.length-2;i++)v.add(c.slice(0,i)+' '+c.slice(i));
+  (c.match(/[A-Za-z]{3,}/g)||[]).forEach(w=>{for(let i=0;i<w.length-1;i++){
+    const sw=w.slice(0,i)+w[i+1]+w[i]+w.slice(i+2);
+    if(sw!==w){v.add(c.replace(w,sw));v.add(c.replace(w,sw).toUpperCase())}}});
+  commas(extra).forEach(x=>v.add(x));
+  v.delete(c);return[...v].filter(Boolean);
+}
+
+/* ══ 상태 ══ */
+/* 서비스 이름 — 바꾸실 때는 이 두 줄만 고치시면 화면 전체가 따라옵니다 */
+const APPNAME='검대리';
+const APPVER='v1.0.2';
+let products=[],hgroups=[],funcs=[],rules=[],missions=[],hist=[],guideText='',GUIDE=null;
+/* 플랫폼 — 사용자가 직접 정의한다. 파일 형식과는 완전히 무관하다.
+   파일 형식으로 플랫폼을 추측하지 않는다. 회사마다 쓰는 형식이 달라서 맞을 확률이 낮고,
+   틀린 추천은 아예 없느니만 못하다. 검수할 때 사용자가 직접 고른다. */
+const PLATDEF=[
+  {name:'블로그',      alias:'블로그, 커뮤니티, 네이버',        minChar:3000, minImg:15, minVid:0, adText:'', adRange:400},
+  {name:'인스타그램',  alias:'인스타, instagram, 피드, 릴스',   minChar:800,  minImg:6,  minVid:1, adText:'', adRange:200},
+  {name:'영상 기획안', alias:'유튜브, 틱톡, 쇼츠, youtube, tiktok, 영상', minChar:500, minImg:0, minVid:1, adText:'', adRange:300},
+];
+let platforms=[],CURPLAT=null;
+const EXTS=['docx','pptx','xlsx'];
+let aiMode='key',aiCfg={prov:'anthropic',model:'',url:'',key:''};
+const PROV={
+ anthropic:{model:'claude-sonnet-4-6',url:'https://api.anthropic.com/v1/messages',
+  h:k=>({'content-type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'}),
+  b:(m,p)=>({model:m,max_tokens:4000,messages:[{role:'user',content:p}]}),pick:d=>(d.content||[]).map(c=>c.text||'').join('')},
+ openai:{model:'gpt-4o',url:'https://api.openai.com/v1/chat/completions',
+  h:k=>({'content-type':'application/json',authorization:'Bearer '+k}),
+  b:(m,p)=>({model:m,messages:[{role:'user',content:p}]}),pick:d=>d.choices[0].message.content},
+ gemini:{model:'gemini-2.0-flash',url:'',h:()=>({'content-type':'application/json'}),
+  b:(m,p)=>({contents:[{parts:[{text:p}]}]}),pick:d=>d.candidates[0].content.parts.map(x=>x.text).join('')},
+ custom:{model:'',url:'',h:k=>({'content-type':'application/json',authorization:'Bearer '+k}),
+  b:(m,p)=>({model:m,messages:[{role:'user',content:p}]}),pick:d=>d.choices?d.choices[0].message.content:JSON.stringify(d)}
+};
+
+/* ══ 이미지 목록 — 1) 표의 번호 라벨 2) 슬라이드 순서 3) 등장 순서 ══ */
+let SHOTS=[];
+/* 사진 목록은 「파일에 실제로 박혀 있는 사진」만 센다.
+   예전에는 표에 적힌 번호 라벨을 먼저 읽었는데, 그러면 라벨에 적힌 수(예: 14장)에서 멈춰
+   실제로 들어 있는 수십 장을 놓쳤다. 촬영 계획만 적히고 사진이 없는 원고는
+   애초에 눈으로 볼 사진이 없으므로 목록도 비운다.
+   라벨은 이제 개수를 정하지 않고 「이름」으로만 빌려 쓴다. */
+function shotLabels(doc){
+  const by={};
+  (doc.blocks||[]).filter(b=>b.role==='idx'&&/\d/.test(b.text)
+      &&/이미지|영상|동영상|컷|img|image|video/i.test(b.text))
+    .forEach(b=>{
+      const t=b.text.replace(/\s+/g,' ').trim();
+      const parts=t.split(/(?=\d{1,2}\s*번)/).map(x=>x.trim()).filter(x=>/\d/.test(x)&&x.length>=2);
+      const k=b.slide||b.person||'';
+      (by[k]=by[k]||[]).push(...(parts.length>1?parts:[t]));
+    });
+  return by;
+}
+function buildShots(doc){
+  const out=[];
+  if(doc.type==='pptx'){
+    const lb=shotLabels(doc);
+    const ns=Object.keys(doc.slidePics||{}).sort((a,b)=>(+a.match(/\d+/)[0])-(+b.match(/\d+/)[0]));
+    let seq=0;
+    ns.forEach(n=>{
+      const cnt=doc.slidePics[n]||0;if(!cnt)return;
+      const sn=+n.match(/\d+/)[0], names=lb[n]||[], rids=(doc.slideRids||{})[n]||[];
+      for(let i=0;i<cnt;i++){
+        seq++;
+        out.push({label:names[i]||`슬라이드 ${sn} · 사진 ${i+1}`,
+          person:(doc.slidePerson||{})[n]||null,slide:n,seq,
+          uid:`${n}#${rids[i]||i}`});     // 순번이 밀려도 메모가 따라다니게 하는 열쇠
+      }
+    });
+    if(out.length)return{shots:out,how:'파일에 들어 있는 사진을 슬라이드 순서로'};
+    /* 사진이 한 장도 없는 촬영 기획안이라면, 표에 적힌 번호라도 읽어 목록을 만든다.
+       예전 문제는 라벨을 「먼저」 본 것이지 라벨 자체가 아니었다. 여기서는 마지막 수단이다. */
+    Object.keys(lb).forEach(k=>lb[k].forEach((nm,i)=>out.push({
+      label:nm,person:(doc.slidePerson||{})[k]||null,slide:k,seq:++seq,uid:`plan:${k}#${i}`})));
+    if(out.length)return{shots:out,how:'파일에 사진이 없어 계획서에 적힌 번호를 읽어',planOnly:true};
+    return{shots:[],how:'',none:true};
+  }
+  /* 워드·엑셀은 파일에 박힌 사진을 등장 순서대로 센다.
+     imgParas 로 몇 번째 문단의 사진인지 함께 들고 있어야 코멘트 위치가 맞는다 */
+  for(let i=1;i<=doc.images;i++)out.push({label:`사진 ${String(i).padStart(2,'0')}`,person:null,seq:i,uid:'seq:'+i,
+    para:doc.imgParas?doc.imgParas[i-1]:undefined});
+  return out.length?{shots:out,how:'파일에 들어 있는 사진을 등장 순서로'}:{shots:[],how:'',none:true};
+}
+/* 예전에는 체크와 메모가 화면에만 있었다. AI 검수를 돌리면 결과 화면을 다시 그리는데,
+   그때 사용자가 적어 둔 내용이 아무 말 없이 전부 사라졌다. 지금은 SHOTS 에 바로 담는다. */
+function imgIssues(){
+  const out=[];
+  SHOTS.forEach((sh,i)=>{
+    const checks=sh.checks||[],memo=(sh.memo||'').trim();
+    if(checks.length||memo)out.push({i,checks,memo,shot:sh});
+  });
+  return out;
+}
+
+/* ══ 검수 엔진 ══ */
+const TYPES={must:'포함 필수',ban:'포함 금지',replace:'치환 권장',cond:'조건부 필수'};
+function ctx(text,term){const i=findTerm(text,term);if(i<0)return'';
+  return'「'+text.slice(Math.max(0,i-14),i+term.length+14).replace(/\n/g,' ').trim()+'」'}
+function it(tier,label,status,detail,src,fix){return{tier,label,status,detail,src:src||'기계',fix:fix||''}}
+const live=items=>items.filter(i=>!i.off);
+/* 고지 문구를 하나도 등록하지 않았으면 이 캠페인은 고지 문구를 안 쓰는 것이다.
+   사용자가 토글을 직접 끄지 않아도 관련 검사가 걸리지 않게 한다. */
+const hasNotice=()=>funcs.some(f=>(f.a||'').trim()&&(f.b||'').trim());
+/* 사람 구분에 실패해 여러 사람 원고가 한 덩어리로 묶인 상태.
+   이때 고지 문구 중복 검사는 남의 원고와 겹친 것을 중복으로 오인한다.
+   그래서 위반으로 단정하지 않고 확인 요청으로 낮춘다. */
+let LUMPED=false;
+
+function machineCheck(doc,body){
+  const out=[],full=doc.raw;
+  const P=CURPLAT||platforms[0]||PLATDEF[0];
+  const qc=+P.minChar||0,qi=+P.minImg||0,qv=+P.minVid||0;
+  if(qc)out.push(it(2,'글자 수',body.length>=qc?'pass':'fail',`${body.length.toLocaleString()}자 / 기준 ${qc.toLocaleString()}자`));
+  if(qi)out.push(it(2,'이미지 수',doc.images>=qi?'pass':'fail',`${doc.images}장 / 기준 ${qi}장`));
+  if(qv)out.push(it(2,'영상 수',doc.videos>=qv?'pass':'fail',`${doc.videos}개 / 기준 ${qv}개`));
+  if(base.rival){
+    const hits=lines(dicts.rival).filter(w=>hasTerm(full,w));
+    out.push(it(1,'타사 제품·브랜드 언급',hits.length?'fail':'pass',
+      hits.length?`${hits.join(', ')} 발견 ${ctx(full,hits[0])}`:'텍스트상 해당 없음'));
+  }
+  if(base.ad){
+    /* 기계는 「정한 문구가 상단에 있는가」만 본다. 확정적이고 인터넷이 필요 없다.
+       해시태그로 쓸지 문장으로 쓸지 같은 표기 방식은 플랫폼마다 관행이 달라 AI(adForm)가 판단한다. */
+    const rg=+P.adRange||400,head=body.slice(0,rg),want=(P.adText||'').trim();
+    const bare=x=>x.replace(/[\s*\[\]()·・#]/g,'');   // 기호·공백은 무시하고 본다
+    const ok=want?bare(head).includes(bare(want)):/광고|협찬|지원\s?받아|제공\s?받아/.test(head);
+    out.push(it(2,'광고 고지',ok?'pass':'fail',
+      ok?`본문 상단 ${rg}자 안에서 확인`:`본문 상단 ${rg}자 안에서 ${want?`「${want}」를 `:'고지를 '}찾지 못했습니다`));
+  }
+  if(base.lead){
+    const want=$('#leadText').value.trim();
+    if(want){
+      const rg=+$('#leadRange').value||400,head=body.slice(0,rg);
+      const ok=norm(head).includes(norm(want));
+      out.push(it(2,'상단 필수 문구',ok?'pass':'fail',ok?`앞 ${rg}자 안에서 확인`:`앞 ${rg}자 안에 「${want}」가 없습니다`));
+    }
+  }
+  if(base.banSub){
+    const bans=lines($('#banSub').value);
+    if(bans.length){
+      const nf=norm(full);
+      const hit=bans.find(b=>{const key=norm(b).slice(0,15);return key.length>=6&&nf.includes(key)});
+      out.push(it(2,'금지 고지 문구',hit?'fail':'pass',
+        hit?`제외 대상 문구가 들어갔습니다 — 「${hit.slice(0,34)}…」`:'해당 없음','기계',hit?'해당 문구 삭제':''));
+    }
+  }
+  if(base.hype){
+    const hits=lines(dicts.hype).filter(w=>hasTerm(full,w));
+    out.push(it(2,'최상급·과장 표현',hits.length?'warn':'pass',
+      hits.length?`${hits.join(', ')} — 법무 확인 필요 ${ctx(full,hits[0])}`:'해당 없음'));
+  }
+  if(base.fnDup&&hasNotice()){
+    const dup=[],seen={};
+    /* ㉠ 기호로 시작하는 줄이 두 번 이상 나오는 경우 */
+    full.split('\n').map(s=>s.trim()).filter(s=>isMarkLine(s)&&s.length>12)
+      .forEach(l=>{seen[l]=(seen[l]||0)+1;if(seen[l]===2)dup.push(l.slice(0,26))});
+    /* ㉡ 기호를 안 쓰더라도, 등록해 두신 문구가 원고에 두 번 이상 나오는 경우 */
+    const nf=norm(full);
+    funcs.forEach(f=>{const b=(f.b||'').trim();if(b.length<12)return;
+      const key=norm(b).slice(0,20);let c=0,i=0;
+      while((i=nf.indexOf(key,i))>=0){c++;i+=key.length}
+      if(c>1&&!dup.some(d=>norm(d).includes(key.slice(0,12))))dup.push(b.slice(0,26))});
+    out.push(it(2,'고지 문구 중복',dup.length?(LUMPED?'warn':'fail'):'pass',
+      !dup.length?'중복 없음':LUMPED
+        ?`${dup.length}건 — 「${dup[0]}…」 · 사람 구분을 못 해 전체를 한 번에 검사했습니다. 다른 사람 원고와 겹친 것일 수 있으니 확인해 주세요`
+        :`${dup.length}건 — 「${dup[0]}…」`));
+  }
+  const noTag=stripTags(full);
+  products.forEach(p=>{
+    if(!(p.canon||'').trim())return;
+    const hit=variants(p.canon,p.extra).find(v=>noTag.includes(v));
+    out.push(it(+p.tier||1,`제품명 — ${p.canon}`,hit?'fail':'pass',
+      hit?`잘못된 표기 「${hit}」 발견 ${ctx(noTag,hit)}`:noTag.includes(p.canon)?'정식 표기 확인':'해당 제품명 미등장',
+      '기계',hit?`${hit} → ${p.canon}`:''));
+  });
+  const req=tagsOf($('#hReq').value);
+  if(req.length){
+    const miss=req.filter(t=>!full.includes(t));
+    out.push(it(2,'필수 해시태그',miss.length?'fail':'pass',
+      miss.length?`누락 ${miss.length}개 — ${miss.join(' ')}`:`${req.length}개 전부 확인`,
+      '기계',miss.length?`다음 태그 추가: ${miss.join(' ')}`:''));
+  }
+  hgroups.forEach((g,i)=>{
+    const tags=tagsOf(g.tags);if(!tags.length)return;
+    const got=tags.filter(t=>full.includes(t));
+    out.push(it(2,`해시태그 택1 그룹 ${i+1}`,got.length>=(+g.min||1)?'pass':'fail',
+      `${got.length}개 포함 / 최소 ${g.min||1}개 — ${tags.join(' ')}`));
+  });
+  funcs.forEach(f=>{
+    if(!(f.a||'').trim())return;
+    if(!full.includes(f.a))return out.push(it(+f.tier||2,`고지 문구 — ${f.a}`,'pass','기능 미언급, 검사 제외'));
+    const ok=f.b&&norm(full).includes(norm(f.b.trim()).slice(0,15));
+    out.push(it(+f.tier||2,`고지 문구 — ${f.a}`,ok?'pass':'fail',ok?'동반 문구 확인':'기능은 언급됐는데 고지 문구가 없습니다',
+      '기계',ok?'':`${f.a} 고지 문구 삽입`));
+  });
+  /* 여기 적힌 말이 원고에 있는지만 본다. 기능명이든 캠페인 문구든 상관없다 */
+  commas($('#mKeys').value).forEach(k=>{
+    out.push(it(2,`필수 키워드 — ${k}`,full.includes(k)?'pass':'fail',full.includes(k)?'언급 확인':'원고에 없습니다'));
+  });
+  rules.forEach(r=>{
+    const a=(r.a||'').trim(),b=(r.b||'').trim();if(!a)return;
+    if(r.type==='must')out.push(it(r.tier,`포함 필수 — ${a}`,full.includes(a)?'pass':'fail',full.includes(a)?'확인':'원고에 없습니다'));
+    if(r.type==='ban')out.push(it(r.tier,`포함 금지 — ${a}`,full.includes(a)?'fail':'pass',full.includes(a)?`발견 ${ctx(full,a)}`:'해당 없음'));
+    if(r.type==='replace')out.push(it(r.tier,`표기 — ${a} → ${b}`,full.includes(a)?'fail':'pass',
+      full.includes(a)?`잘못된 표기 ${ctx(full,a)}`:'해당 없음','기계',full.includes(a)?`${a} → ${b}`:''));
+    if(r.type==='cond'){
+      if(!full.includes(a))out.push(it(r.tier,`조건부 — ${a}`,'pass','트리거 미등장'));
+      else out.push(it(r.tier,`조건부 — ${a}`,b&&full.includes(b)?'pass':'fail',b&&full.includes(b)?'확인':`${a} 언급됐으나 동반 문구가 없습니다`));
+    }
+  });
+  return out;
+}
+function verdict(items){
+  const L=live(items);
+  if(L.some(i=>i.tier===1&&i.status==='fail'))return{v:'게재 불가',cls:'s-no',why:'티어 1 항목이 걸렸습니다. 이 상태로는 게재할 수 없습니다.'};
+  if(L.some(i=>i.tier===2&&i.status==='fail'))return{v:'수정 후\n재검토',cls:'s-fix',why:'티어 2에 미충족이 있습니다. 수정 요청 후 다시 확인해 주세요.'};
+  if(L.some(i=>i.status==='warn'))return{v:'조건부\n승인',cls:'s-fix',why:'확인이 필요한 항목이 있습니다. 판단하신 뒤 진행해 주세요.'};
+  return{v:'승인',cls:'s-ok',why:'티어 1·2 전부 통과했습니다. 티어 3은 권고 수준입니다.'};
+}
+
+/* ══════════════════════════════════════════════════════
+   ai.js  —  AI 통신 · 검수 프롬프트 만들기 · 응답 합치기
+   ※ src/ 의 자바스크립트 파일들은 build.sh 가 순서대로 이어 붙여
+      하나의 스크립트가 됩니다. 파일이 나뉘어 있어도 서로의
+      함수와 값을 그대로 씁니다. 순서는 바꾸지 마십시오.
+   ══════════════════════════════════════════════════════ */
+
+/* ══ AI ══ */
+function aiTaskList(){return BASE.filter(b=>b.who==='AI'&&base[b.k])}
+function properList(){
+  const set=new Set();
+  products.forEach(p=>{if((p.canon||'').trim())set.add(p.canon.trim())});
+  funcs.forEach(f=>{if((f.a||'').trim())set.add(f.a.trim())});
+  lines($('#properNames').value).forEach(x=>set.add(x));
+  return [...set];
+}
+function buildPrompt(doc){
+  const tasks=aiTaskList().map(t=>t.k);
+  const multi=!!(LAST&&LAST.groups&&LAST.groups.length>1);
+  const mech=(LAST?LAST.items:[]).filter(i=>i.status!=='pass');
+  const ref=$('#refText').value.trim(),proper=properList();
+  const P=[];
+  P.push('당신은 인플루언서·체험단 원고를 검수하는 실무자입니다. 아래 원고를 검수하고 JSON으로만 답하십시오.');
+  P.push(`\n[캠페인] ${$('#cName').value||'(미입력)'}`);
+  P.push(`[타깃] ${$('#mTarget').value||'특별한 제한 없음'}`);
+  if($('#mTopic').value.trim())P.push(`\n[이번 회차 주제]\n${$('#mTopic').value}`);
+  P.push(`\n[플랫폼] ${(CURPLAT&&CURPLAT.name)||'(미지정)'}`);
+  if($('#mType')&&$('#mType').value.trim())P.push(`[인플루언서 유형] ${$('#mType').value.trim()}`);
+  if($('#mNote').value.trim())P.push(`\n[이번 회차 추가 요청]\n${$('#mNote').value}`);
+  P.push(`\n[필수 키워드] ${$('#mKeys').value||'없음'}`);
+  if(proper.length)P.push(`\n[브랜드 정식 명칭 — 아래 표기는 그대로가 맞습니다. 띄어쓰기나 맞춤법 오류로 지적하지 마십시오]\n${proper.join(' / ')}`);
+  if(ref)P.push(`\n[사실 확인용 참고 자료 — 이 범위 안의 내용은 정확한 것으로 간주하십시오]\n${ref.slice(0,REFMAX)}`);
+  if(guideText)P.push(`\n[가이드 원문]\n${guideForAI()}`);
+  P.push('\n[검수 항목]');
+  if(tasks.includes('spell'))P.push(`- 오탈자·맞춤법: 가장 중요한 항목입니다. 원고를 한 문장씩 훑으며 다음을 모두 찾으십시오.
+  · 띄어쓰기 (의존명사 '것/걸/수/때', 보조용언, 단위명사)
+  · 조사·어미 오류, 시제 불일치
+  · 외래어 표기법
+  · 맞춤법 (되/돼, 안/않, 든지/던지, 로서/로써)
+  발견한 것은 빠짐없이 각각 별도 항목으로 보고하고, fix에 반드시 고친 문장을 넣으십시오.
+  단, 위 [브랜드 정식 명칭]에 있는 표기는 건드리지 마십시오.`);
+  if(tasks.includes('risk'))P.push(`- 법무·사회적 리스크: 실제로 광고 심의나 소비자 항의로 이어질 수준만 지적하십시오.
+  해당됨: 타 브랜드·타 제품과의 직간접 비교, 효능 단정, 검증 안 된 수치, 특정 집단 비하
+  해당 안 됨: 개인의 생활 경험 서술, 일상적인 상황 묘사, 본인 주변 이야기, 주관적 감상
+  애매하면 지적하지 마십시오.`);
+  if(tasks.includes('topic')&&$('#mTopic').value.trim())P.push(`- 회차 주제 부합: 주제에서 명백히 벗어났을 때만 지적하십시오.
+  타깃 설명을 좁게 해석하지 마십시오. 예시나 곁가지 문장 하나를 문제 삼지 마십시오.
+  주제와 무관하지는 않으나 깊이가 얕은 정도라면 tier 3으로 하십시오.`);
+  if(tasks.includes('fact'))P.push(`- 기능 설명 오류: 기능명을 잘못 붙였거나, 조건·제약을 빠뜨려 오해를 부를 설명을 찾으십시오.
+  참고 자료나 가이드에 근거가 있는 내용은 지적하지 마십시오.`);
+  if(tasks.includes('subAcc')&&hasNotice())P.push(`- 고지 문구 정확성: 원고에 들어간 필수 고지 문구가 해당 기능을 정확히 설명하는지, 조건이 빠지지 않았는지 보십시오.
+  가이드의 문구와 다르게 적혔다면 지적하십시오.`);
+  if(tasks.includes('adForm'))P.push(`- 광고 고지 표기 방식: 이 콘텐츠는 「${(CURPLAT&&CURPLAT.name)||'해당 플랫폼'}」에 올라갑니다.
+  광고·협찬 고지가 그 플랫폼의 관행과 규정에 맞는 방식으로 표기되었는지 보십시오.
+  해시태그로 쓸지 문장으로 쓸지, 어디에 배치할지는 플랫폼마다 다릅니다. 고지 문구가 아예 없거나,
+  더보기에 가려질 위치에 있거나, 그 플랫폼에서 인정되지 않는 방식이라면 지적하십시오.
+  고지 내용 자체가 상단에 있는지는 기계가 이미 확인했으니 다시 지적하지 마십시오.`);
+  if(tasks.includes('voice'))P.push(`- 말투 · 메이커보이스 (tier 3, 권고): 체험단 원고는 실제 사용자의 후기여야 합니다.
+  각 문단에 대해 판단하십시오. 이 문장을 브랜드 공식 계정이 그대로 올려도 어색하지 않다면 메이커보이스입니다.
+  ★ 고칠 때는 반드시 그 작성자가 원래 쓰던 말투를 그대로 두십시오. 이것이 가장 중요합니다.
+    · 먼저 그 사람이 서술체(~다), 해요체(~해요), 반말(~함/~음), 구어체 중 무엇으로 쓰는지 보고 그 어미를 유지하십시오.
+    · 그 사람이 안 쓰던 감탄사(~네요, ~있죠, ~더라고요), 물결표(~), 이모지, 과장된 추임새를 새로 넣지 마십시오.
+    · 예: 원문이 「세척력이 참 깔끔하다」이면 → 「직접 써 보니 세척력이 깔끔하더라」처럼 서술체를 지키고,
+      「깔끔한 거 있죠~?」처럼 원작자가 안 쓰던 블로거 말투로 바꾸지 마십시오.
+    · 목표는 광고 티만 걷어내는 것이지, 글쓴이를 다른 사람으로 바꾸는 것이 아닙니다. 최소한만 고치십시오.
+  반대로 그 사람이 실제로 겪지 않으면 쓸 수 없는 내용 — 구체적인 상황, 시점, 사소한 불만, 예상과 달랐던 점 — 이 들어 있다면 지적하지 마십시오.
+  제품이 문장의 주인공이고 사람이 배경으로 밀려난 곳을 찾으십시오.
+  확신이 서는 것만 지적하십시오. ${multi?'사람당':'원고당'} 최대 10건까지 보고하십시오.
+  fix에는 같은 내용을 사용자 화법으로 옮긴 문장을 넣으십시오.`);
+  P.push(`\n[기계 검수가 이미 잡은 것]\n${mech.length?mech.map(i=>`- ${i.label}: ${i.detail}`).join('\n'):'없음'}`);
+  P.push('위 항목은 다시 지적하지 마십시오. 다만 그중 맥락상 명백한 오탐이 있다면 dismiss 배열에 그 label을 그대로 넣어 주십시오.');
+  P.push(`\n[티어]\n1 = 게재 불가 (타 브랜드 노출, 제품명 중대 오류)\n2 = 수정 필요 (맞춤법, 명백한 주제 이탈, 리스크 표현, 기능 설명 오류, 고지 누락)\n3 = 권고`);
+  P.push(`\n[출력 — 다른 말 없이 이 JSON 하나만]
+{"people":["원고에 나오는 모든 작성자"],"issues":[{"person":"","tier":2,"label":"항목명","status":"fail","detail":"무엇이 왜 문제인지","quote":"원고 원문 그대로 20자 이내","fix":"고친 문장"}],"dismiss":["오탐인 기계 항목 label"]}
+- people: 원고에 나오는 작성자를 문제가 없는 사람까지 빠짐없이 적습니다. 7명분이면 7명 모두입니다.
+  문제 있는 사람만 적으면 나머지가 검수 결과에서 사라집니다. 한 명분이면 빈 배열로 둡니다.
+- person: 원고가 여러 명분이면 그 사람의 이름을 정확히 적습니다. 한 명분이면 빈 문자열로 둡니다.
+- status는 fail 또는 warn만 씁니다.
+- quote는 반드시 원고에 그대로 있는 문자열이어야 합니다.
+- fix는 가능한 항목 모두에 채웁니다. 삭제가 답이면 "해당 문장 삭제"라고 씁니다.
+- 문제가 없으면 {"issues":[],"dismiss":[]}`);
+  if(multi){
+    P.push(`\n[원고 — ${LAST.groups.length}명분입니다. 사람마다 따로 검수하고, 각 지적에 person 값을 반드시 넣으십시오]`);
+    LAST.groups.forEach(g=>P.push(`\n===== ${g.name} =====\n${g.doc.raw}`));
+  }else P.push(`\n[원고]\n${doc.raw}`);
+  return P.join('\n');
+}
+async function callAI(prompt){
+  const p=PROV[aiCfg.prov],model=aiCfg.model||p.model;
+  let url=aiCfg.url||p.url;
+  if(aiCfg.prov==='gemini')url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(aiCfg.key)}`;
+  const r=await fetch(url,{method:'POST',headers:p.h(aiCfg.key),body:JSON.stringify(p.b(model,prompt))});
+  if(!r.ok)throw new Error(`${r.status} — ${(await r.text()).slice(0,180)}`);
+  return p.pick(await r.json());
+}
+function parseAI(txt){
+  const c=String(txt).replace(/```json|```/g,'').trim();
+  let obj=null;
+  const o=c.indexOf('{'),oe=c.lastIndexOf('}'),a=c.indexOf('['),ae=c.lastIndexOf(']');
+  if(o>=0&&oe>o){try{obj=JSON.parse(c.slice(o,oe+1))}catch(e){}}
+  if(!obj&&a>=0&&ae>a){try{obj={issues:JSON.parse(c.slice(a,ae+1)),dismiss:[]}}catch(e){}}
+  if(!obj)throw new Error('JSON을 찾지 못했습니다');
+  const issues=(obj.issues||[]).map(x=>{
+    const o=it(+x.tier||2,String(x.label||'AI 지적'),x.status==='warn'?'warn':'fail',
+      (x.detail||'')+(x.quote?` 「${x.quote}」`:''),'AI',x.fix||'');
+    o.person=(x.person||'').trim();return o;
+  });
+  return{issues,dismiss:obj.dismiss||[],people:obj.people||[]};
+}
+
+/* ══════════════════════════════════════════════════════
+   settings.js  —  설정 화면 · 목록 UI · 가이드에서 설정 뽑아내기
+   ※ src/ 의 자바스크립트 파일들은 build.sh 가 순서대로 이어 붙여
+      하나의 스크립트가 됩니다. 파일이 나뉘어 있어도 서로의
+      함수와 값을 그대로 씁니다. 순서는 바꾸지 마십시오.
+   ══════════════════════════════════════════════════════ */
+
+/* ══ 탭 ══ */
+$$('nav button').forEach(b=>b.onclick=()=>{
+  $$('nav button').forEach(x=>x.classList.toggle('on',x===b));
+  $$('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+b.dataset.p));
+  if(b.dataset.p==='his')drawHist();
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+
+/* ══ 목록 UI ══ */
+function drawProducts(){
+  const box=$('#pnBox');
+  if(!products.length)return box.innerHTML='<div class="empty">등록된 제품명이 없습니다. 가이드의 제품명 규정을 옮겨 두세요.</div>';
+  box.innerHTML='<table class="g"><tr><th>정식 표기</th><th>추가로 금지할 표기 (쉼표 구분)</th><th style="width:88px">티어</th><th style="width:34px"></th></tr>'+
+    products.map((p,i)=>`<tr>
+      <td><input type="text" value="${esc(p.canon||'')}" data-i="${i}" data-k="canon" placeholder="예) 래온셀 배리어 크림"></td>
+      <td><input type="text" value="${esc(p.extra||'')}" data-i="${i}" data-k="extra" placeholder="예) 래온쉘, 래온셀크림"></td>
+      <td><select data-i="${i}" data-k="tier">${[1,2,3].map(t=>`<option value="${t}" ${(+p.tier||1)===t?'selected':''}>T${t}</option>`).join('')}</select></td>
+      <td><button class="x" data-del="${i}">✕</button></td></tr>
+      <tr><td colspan="4" class="vlist">${p.canon?'자동 탐지 — '+variants(p.canon,p.extra).slice(0,7).map(v=>`<b>${esc(v)}</b>`).join(' · ')+(variants(p.canon,p.extra).length>7?' 외':''):''}</td></tr>`).join('')+'</table>';
+  box.querySelectorAll('input,select').forEach(el=>el.oninput=e=>{
+    products[+e.target.dataset.i][e.target.dataset.k]=e.target.value;
+    if(e.target.dataset.k!=='tier'){clearTimeout(window._pt);window._pt=setTimeout(()=>keepCaret(drawProducts),700)}});
+  box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{products.splice(+b.dataset.del,1);drawProducts()});
+}
+$('#pnAdd').onclick=()=>{products.push({canon:'',extra:'',tier:1});drawProducts()};
+function drawGroups(){
+  const box=$('#hgBox');
+  if(!hgroups.length)return box.innerHTML='<div class="empty">해당하는 경우가 없으면 비워 두셔도 됩니다.</div>';
+  box.innerHTML='<table class="g"><tr><th>태그 목록</th><th style="width:104px">최소 개수</th><th style="width:34px"></th></tr>'+
+    hgroups.map((g,i)=>`<tr>
+      <td><input type="text" value="${esc(g.tags||'')}" data-i="${i}" data-k="tags" placeholder="예) #속건조 #환절기스킨케어"></td>
+      <td><input type="number" value="${g.min||1}" data-i="${i}" data-k="min" min="1"></td>
+      <td><button class="x" data-del="${i}">✕</button></td></tr>`).join('')+'</table>';
+  box.querySelectorAll('input').forEach(el=>el.oninput=e=>hgroups[+e.target.dataset.i][e.target.dataset.k]=e.target.value);
+  box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{hgroups.splice(+b.dataset.del,1);drawGroups()});
+}
+$('#hgAdd').onclick=()=>{hgroups.push({tags:'',min:1});drawGroups()};
+function drawFuncs(){
+  const box=$('#fnBox');
+  if(!funcs.length)return box.innerHTML='<div class="empty">고지 문구가 따라와야 하는 기능을 등록해 주세요.</div>';
+  box.innerHTML='<table class="g"><tr><th>기능명</th><th>따라와야 할 문구 (전문 그대로)</th><th style="width:34px"></th></tr>'+
+    funcs.map((f,i)=>`<tr>
+      <td><input type="text" value="${esc(f.a||'')}" data-i="${i}" data-k="a" placeholder="예) 딥배리어"></td>
+      <td><textarea data-i="${i}" data-k="b" placeholder="예) 개인의 상태와 사용 환경에 따라 체감 효과가 다를 수 있습니다." style="min-height:44px;font-size:12px">${esc(f.b||'')}</textarea></td>
+      <td><button class="x" data-del="${i}">✕</button></td></tr>`).join('')+'</table>';
+  box.querySelectorAll('input,textarea').forEach(el=>el.oninput=e=>funcs[+e.target.dataset.i][e.target.dataset.k]=e.target.value);
+  box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{funcs.splice(+b.dataset.del,1);drawFuncs()});
+}
+$('#fnAdd').onclick=()=>{funcs.push({a:'',b:'',tier:2});drawFuncs()};
+/* ══ 미션 프리셋 ══
+   가이드 하나에 플랫폼이 여럿이고, 플랫폼마다 회차 수가 다르고,
+   인플루언서 유형에 따라 담을 내용이 또 갈리는 통합 가이드가 흔하다.
+   축이 셋이라 화면을 셋으로 나누면 감당이 안 되므로 한 표에 다 담고,
+   검수할 때 플랫폼과 유형으로 좁혀서 고르게 한다.
+   플랫폼·유형을 비워 두면 「전체 공통」으로 취급하므로,
+   축을 안 쓰는 단순한 캠페인은 예전과 똑같이 동작한다. */
+function drawMissions(){
+  const box=$('#rdBox');
+  const plOpts=i=>'<option value="">전체 공통</option>'+platforms.map(p=>
+    `<option value="${esc(p.name)}"${missions[i].plat===p.name?' selected':''}>${esc(p.name||'(이름 없음)')}</option>`).join('');
+  box.innerHTML=!missions.length?'<div class="empty">가이드에 회차나 주제가 정해져 있으면 등록해 두세요. 없으면 비워 두셔도 됩니다.</div>'
+   :'<table class="g"><tr><th style="width:118px">플랫폼</th><th style="width:96px">유형</th>'
+    +'<th style="width:88px">회차</th><th>주제</th><th style="width:132px">필수 키워드</th><th style="width:34px"></th></tr>'+
+    missions.map((r,i)=>`<tr>
+      <td><select data-i="${i}" data-k="plat">${plOpts(i)}</select></td>
+      <td><input type="text" value="${esc(r.type||'')}" data-i="${i}" data-k="type" placeholder="전체"></td>
+      <td><input type="text" value="${esc(r.name||'')}" data-i="${i}" data-k="name" placeholder="예) 1주차"></td>
+      <td><input type="text" value="${esc(r.topic||'')}" data-i="${i}" data-k="topic" placeholder="예) 첫인상과 제형 소개"></td>
+      <td><input type="text" value="${esc(r.keys||'')}" data-i="${i}" data-k="keys" placeholder="쉼표로 구분"></td>
+      <td><button class="x" data-del="${i}">✕</button></td></tr>`).join('')+'</table>';
+  box.querySelectorAll('input,select').forEach(el=>{
+    const h=e=>{missions[+e.target.dataset.i][e.target.dataset.k]=e.target.value;syncPick();saveAll()};
+    el.oninput=h;el.onchange=h});
+  box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{missions.splice(+b.dataset.del,1);drawMissions();saveAll()});
+  syncPick();
+}
+/* 지금 고른 플랫폼·유형에 해당하는 미션만 남긴다. 비어 있는 축은 전체 공통이라 항상 통과시킨다 */
+function missionMatches(m){
+  const pl=(CURPLAT&&CURPLAT.name)||'',ty=($('#mType')&&$('#mType').value.trim())||'';
+  if(m.plat&&pl&&m.plat!==pl)return false;
+  if(m.type&&ty&&m.type.replace(/\s/g,'')!==ty.replace(/\s/g,''))return false;
+  return true;
+}
+function syncPick(){
+  const sel=$('#rdPick');if(!sel)return;
+  const cur=sel.value;
+  const opts=missions.map((m,i)=>({m,i})).filter(x=>missionMatches(x.m));
+  sel.innerHTML='<option value="">직접 입력</option>'+opts.map(({m,i})=>{
+    const tag=[m.plat,m.type].filter(Boolean).join(' · ');
+    return `<option value="${i}">${esc(m.name||'미션 '+(i+1))}${tag?` — ${esc(tag)}`:''}</option>`}).join('');
+  sel.value=cur;
+  const n=$('#rdCount');
+  if(n)n.textContent=!missions.length?'':
+    opts.length===missions.length?`등록된 미션 ${missions.length}개`
+    :`전체 ${missions.length}개 중 지금 조건에 맞는 ${opts.length}개만 보여 드립니다`;
+}
+$('#rdAdd').onclick=()=>{missions.push({plat:'',type:'',name:'',topic:'',keys:''});drawMissions();saveAll()};
+$('#rdPick').onchange=e=>{const r=missions[+e.target.value];if(!r)return;
+  $('#mTopic').value=r.topic||'';$('#mKeys').value=r.keys||''};
+/* ══ 플랫폼 목록 ══
+   플랫폼은 「어떤 기준으로 검사할지」만 정하고,
+   파일 형식은 「어떤 파서로 읽을지」만 정한다. 둘은 서로를 모른다.
+   그래서 블로그 원고를 엑셀로 써도, 영상 기획안을 워드로 써도 돌아간다. */
+function loadPlatforms(){
+  try{platforms=JSON.parse(S.get('v4_plat')||'null')||[]}catch(e){platforms=[]}
+  if(!platforms.length)platforms=JSON.parse(JSON.stringify(PLATDEF));
+}
+function savePlatforms(){S.set('v4_plat',JSON.stringify(platforms));saveAll()}
+function drawPlatforms(){
+  const box=$('#plBox');if(!box)return;
+  box.innerHTML='<table class="g"><tr>'
+    +'<th style="width:150px">플랫폼 · 별칭</th><th style="width:76px">최소 글자</th>'
+    +'<th style="width:66px">이미지</th><th style="width:66px">영상</th>'
+    +'<th>광고 고지 문구 · 확인 범위</th><th style="width:34px"></th></tr>'
+    +platforms.map((p,i)=>`<tr>
+      <td><input type="text" value="${esc(p.name||'')}" data-i="${i}" data-k="name" placeholder="예) 블로그">
+        <input type="text" value="${esc(p.alias||'')}" data-i="${i}" data-k="alias" placeholder="별칭 (쉼표)" style="margin-top:5px;font-size:11px"></td>
+      <td><input type="number" value="${esc(p.minChar||'')}" data-i="${i}" data-k="minChar" placeholder="0"></td>
+      <td><input type="number" value="${esc(p.minImg||'')}" data-i="${i}" data-k="minImg" placeholder="0"></td>
+      <td><input type="number" value="${esc(p.minVid||'')}" data-i="${i}" data-k="minVid" placeholder="0"></td>
+      <td><input type="text" value="${esc(p.adText||'')}" data-i="${i}" data-k="adText" placeholder="가이드의 고지 문구를 그대로">
+        <input type="number" value="${esc(p.adRange||'')}" data-i="${i}" data-k="adRange" placeholder="본문 앞 몇 자까지 볼지 (기본 400)" style="margin-top:5px;font-size:11px"></td>
+      <td><button class="x" data-del="${i}">✕</button></td></tr>`).join('')
+    +'</table>';
+  box.querySelectorAll('input,select').forEach(el=>el.oninput=e=>{
+    platforms[+e.target.dataset.i][e.target.dataset.k]=e.target.value;savePlatforms();fillPlatSelect()});
+  box.querySelectorAll('select').forEach(el=>el.onchange=e=>{
+    platforms[+e.target.dataset.i][e.target.dataset.k]=e.target.value;savePlatforms()});
+  box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
+    if(platforms.length<=1)return alert('플랫폼은 최소 하나가 필요합니다.');
+    platforms.splice(+b.dataset.del,1);savePlatforms();drawPlatforms()});
+}
+$('#plAdd').onclick=()=>{platforms.push({name:'',alias:'',minChar:'',minImg:'',minVid:'',adText:'',adRange:400});savePlatforms();drawPlatforms()};
+
+/* 파일 형식으로 플랫폼을 추측하지 않는다.
+   회사마다 쓰는 형식이 제각각이라 틀릴 확률이 높고, 틀린 추천은 없느니만 못하다.
+   고르지 않으면 검수로 넘어가지 못하게 막는다. */
+function fillPlatSelect(){
+  const sel2=$('#plSel');if(!sel2)return;
+  const keep=CURPLAT?CURPLAT.name:'';            // 플랫폼 목록을 고쳐도 고른 값은 지킨다
+  sel2.innerHTML='<option value="">— 고르세요 —</option>'
+    +platforms.map((p,i)=>`<option value="${i}">${esc(p.name||'플랫폼 '+(i+1))}</option>`).join('');
+  const ix=platforms.findIndex(p=>p.name===keep);
+  sel2.value=ix<0?'':String(ix);
+  CURPLAT=ix<0?null:platforms[ix];
+  sel2.onchange=()=>{CURPLAT=sel2.value===''?null:platforms[+sel2.value];syncPick();syncRunGate()};
+  syncRunGate();
+}
+/* 플랫폼을 안 고르면 글자 수·광고 고지 기준이 없어서 검수가 성립하지 않는다 */
+function syncRunGate(){
+  const b=$('#run');if(!b)return;
+  b.disabled=false;                       // 눌리지 않는 버튼은 고장으로 보인다. 누르면 이유를 말해 준다
+  const w=$('#runWhy');
+  if(w)w.innerHTML=CURPLAT?'':'<div class="note" style="margin-bottom:14px">'
+    +'<b>검수 기준 플랫폼을 먼저 골라 주세요.</b> 검수 탭 맨 위 <b>01 검수 기준</b>에서 고르시면 검수를 시작할 수 있습니다.<br>'
+    +'글자 수 · 이미지 수 · 광고 고지 기준이 플랫폼마다 달라서, 고르지 않으면 무엇과 비교할지 정해지지 않습니다.</div>';
+  $('#runHint').textContent='';
+}
+
+function drawRules(){
+  const box=$('#rBox');
+  if(!rules.length)return box.innerHTML='<div class="empty">따로 없으면 비워 두셔도 됩니다.</div>';
+  box.innerHTML='<table class="g">'+rules.map((r,i)=>{
+    const two=r.type==='replace'||r.type==='cond';
+    return `<tr><td style="width:84px;padding-top:11px;font-size:12px;font-weight:700">${TYPES[r.type]}</td>
+      <td style="width:42px;padding-top:11px"><span class="chip tb${r.tier}">T${r.tier}</span></td>
+      <td><div style="display:grid;grid-template-columns:${two?'1fr 1fr':'1fr'};gap:6px">
+        <input type="text" value="${esc(r.a||'')}" data-i="${i}" data-k="a" placeholder="${two?'예) 조건 또는 잘못된 표기':'예) 문구'}">
+        ${two?`<input type="text" value="${esc(r.b||'')}" data-i="${i}" data-k="b" placeholder="예) 필수 동반 또는 바른 표기">`:''}
+      </div></td><td style="width:34px"><button class="x" data-del="${i}">✕</button></td></tr>`}).join('')+'</table>';
+  box.querySelectorAll('input').forEach(el=>el.oninput=e=>rules[+e.target.dataset.i][e.target.dataset.k]=e.target.value);
+  box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{rules.splice(+b.dataset.del,1);drawRules()});
+}
+$('#rAdd').onclick=()=>{rules.push({type:$('#rType').value,tier:+$('#rTier').value,a:'',b:''});drawRules()};
+
+/* ══ 프로필 · 자동 저장 ══
+   예전에는 A층만 저장하고 캠페인 설정은 화면에만 들고 있었다.
+   브라우저를 닫으면 절반은 남고 절반은 사라져서 오히려 더 헷갈렸다.
+   지금은 설정 전체를 이 브라우저에 자동으로 저장한다.
+   프로필 파일(.json)은 백업과 팀 공유용으로 성격이 분명해졌다. */
+const FIELDS=['cName','cWho','hReq','leadText','leadRange','banSub','imgChecks','refText','properNames',
+  'hdrMention','hdrSub','hdrReview','hdrIdx','hdrPerson'];
+function profile(){const o={products,hgroups,funcs,rules,missions,platforms,base,dicts};
+  FIELDS.forEach(f=>{const el=$('#'+f);if(el)o[f]=el.value});return o}
+
+function saveAll(){try{S.set('v4_setup',JSON.stringify(profile()))}catch(e){}}
+function loadAll(){
+  const raw=S.get('v4_setup')||'';
+  let p=null;
+  try{p=raw?JSON.parse(raw):null}
+  catch(e){
+    /* 예전에는 조용히 넘어가서, 설정이 통째로 사라졌는데 이유를 알 길이 없었다.
+       깨진 값은 지우되 무슨 일이 있었는지는 반드시 알려 드린다. */
+    S.set('v4_setup','');
+    setTimeout(()=>alert('이 브라우저에 저장해 둔 캠페인 설정이 손상되어 읽지 못했습니다.\n\n'
+      +'처음 상태로 시작합니다. 설정 파일(.json)을 내보내 두셨다면 「설정 파일 불러오기」로 되살리실 수 있습니다.'),0);
+    return false;
+  }
+  if(!p)return false;
+  applyProfile(p);return true;
+}
+function applyProfile(p){
+  FIELDS.forEach(f=>{const el=$('#'+f);if(el&&p[f]!==undefined)el.value=p[f]});
+  products=p.products||[];hgroups=p.hgroups||[];funcs=p.funcs||[];rules=p.rules||[];
+  missions=p.missions||p.rounds||[];              // 옛 프로필의 rounds 도 받아 준다
+  if(p.platforms&&p.platforms.length)platforms=p.platforms;
+  if(p.base)base=Object.assign(base,p.base);
+  if(p.dicts)dicts=Object.assign(dicts,p.dicts);
+}
+function redrawAll(){saveBase();drawBase();drawAI();drawProducts();drawGroups();drawFuncs();drawRules();
+  drawMissions();drawPlatforms();fillDicts();fillPlatSelect();saveAll()}
+
+$('#pfSave').onclick=()=>dl(new Blob([JSON.stringify(profile(),null,2)],{type:'application/json'}),
+  ($('#cName').value||'캠페인')+'_'+APPNAME+'설정.json');
+$('#pfLoad').onclick=()=>{const i=document.createElement('input');i.type='file';i.accept='.json';
+  i.onchange=async()=>{try{applyProfile(JSON.parse(await i.files[0].text()));
+    redrawAll();alert('설정을 불러왔습니다.');
+  }catch(e){alert('설정 파일을 읽지 못했습니다. 이 도구에서 내보낸 .json 파일이 맞는지 확인해 주세요.')}};i.click()};
+$('#pfReset').onclick=()=>{
+  if(!confirm('지금 설정을 전부 지우고 처음 상태로 되돌립니다.\n\n되돌릴 수 없습니다. 필요하시면 먼저 「설정 파일로 저장」을 눌러 주세요.'))return;
+  S.set('v4_setup','');S.set('v4_base','');S.set('v4_dicts','');S.set('v4_plat','');
+  location.reload();
+};
+
+/* ══ 가이드 자동 추출 ══ */
+let SUGG=[];
+function subtitleBlocks(t){        // 표가 없는 가이드에서 쓰는 보조 수단
+  const L=t.split('\n').map(x=>x.trim());
+  const out=[];let cur=null;
+  L.forEach(l=>{
+    const h=headName(l);
+    if(h){cur={name:h,body:[],hit:0};out.push(cur);return}
+    if(!cur)return;                            // 기능명 머리말이 먼저 나와야 짝을 지을 수 있다
+    if(l.length>8&&isMarkLine(l)){cur.body.push(l);cur.hit++;return}
+    if(l.length>10&&NOTICERE.test(l)){cur.body.push(l);cur.hit++;return}  // 기호 없이 문장으로만 적은 경우
+    if(!l)return;
+    if(cur.hit)cur=null;                       // 관계없는 줄이 나오면 묶음을 닫는다
+  });
+  return out.filter(b=>b.hit).map(b=>({name:b.name,body:b.body.join('\n')}));
+}
+const hasHdr=(row,...k)=>row.some(c=>k.some(x=>c.replace(/\s/g,'').includes(x)));
+const splitSlash=v=>v.split(/[\/\n]/).map(x=>x.trim()).filter(x=>x.length>=2&&x.length<=24);
+
+function extractGuide(){
+  const R=[],G=GUIDE,t=G?G.text:guideText;
+  const tables=G?G.tables:[],units=G?G.units:[{texts:t.split('\n'),tables:[]}];
+  const L=t.split('\n').map(x=>x.trim());
+  const flat=t.replace(/\s+/g,' ');
+
+  /* 1) 필수 고지 문구 — 「기능 | 고지 문구」 표. 머리말 단어는 설정에서 온다 */
+  const SUBW=hdrWords('sub');
+  const subHit=c=>{const x=c.replace(/\s/g,'');return SUBW.some(w=>w&&x.includes(w))};
+  /* 기계는 「짝지어져 있다」는 것만 알 뿐 그게 기능↔고지 문구인지는 모른다.
+     운영 안내문이나 진행 조건이 그대로 딸려 들어오는 일이 많아 걸러 낸다.
+     그래도 남는 오탐은 AI가 사전 자체를 다시 만들어 덮어쓴다. */
+  const BADNAME=/(?:시|때|경우|중|후|전|이상|이하|까지|부터)$|합니다|하세요|됩니다|입니다|바랍니다|주세요|이동|클릭|링크|업로드|제출|마감|일정|기한|혜택|선정|모집|지급|안내|문의/;
+  const okName=n=>{const x=String(n||'').trim();
+    return x.replace(/\s/g,'').length>=2&&x.length<=20&&!BADNAME.test(x)&&!/[.,·、。!?]$/.test(x)};
+  const okBody=b=>{const x=String(b||'').trim();return x.length>=15&&(isMarkLine(x)||NOTICERE.test(x))};
+  const fnPairs=[];
+  tables.forEach(rows=>{
+    if(!rows.length||!rows[0].some(subHit))return;
+    const hi=rows[0].findIndex(subHit);
+    /* 이름 열은 기능·제품을 가리키는 머리말이어야 한다. 아무 열이나 짝지으면 엉뚱한 쌍이 생긴다 */
+    const ki=rows[0].findIndex((c,ix)=>ix!==hi&&/기능|제품|항목|용어|명칭|대상|성분|기술/.test(String(c)));
+    if(ki<0)return;
+    rows.slice(1).forEach(r=>{
+      const name=(r[ki]||'').trim(),body=(r[hi]||'').trim();
+      if(okName(name)&&okBody(body)&&!subHit(name))fnPairs.push({name,body});
+    });
+  });
+  if(!fnPairs.length)subtitleBlocks(t).forEach(b=>{if(okName(b.name)&&okBody(b.body))fnPairs.push(b)});
+  /* 가이드는 같은 문구를 여러 장에 반복해 싣는 일이 많다. 같은 쌍은 한 번만 남긴다 */
+  {const seen2={},uniq=[];
+   fnPairs.forEach(f=>{const k=(f.name+'|'+f.body).replace(/\s/g,'');
+     if(seen2[k])return;seen2[k]=1;uniq.push(f)});
+   fnPairs.length=0;uniq.forEach(f=>fnPairs.push(f));}
+  if(fnPairs.length)R.push({k:'필수 고지 문구 사전',v:fnPairs.map(f=>`${f.name} → ${f.body.split('\n')[0].slice(0,46)}…`).join('\n'),
+    f:'_funcs',data:fnPairs,note:`${fnPairs.length}건. 기계는 「무엇과 무엇이 붙어 있는가」만 압니다. 적용 전에 반드시 대조하시고, 「AI로 보완하기」를 함께 쓰시면 정확해집니다`});
+
+  /* 2) 정식 표기 — 「올바른 표기」 표 */
+  const proper=[],brand=[];
+  tables.forEach(rows=>{
+    if(!rows.length||!hasHdr(rows[0],'올바른표기','표기법'))return;
+    const ci=rows[0].findIndex(c=>c.replace(/\s/g,'').includes('올바른표기'));
+    if(ci<0)return;
+    rows.slice(1).forEach(r=>{
+      const kind=(r[0]||'').trim(),val=(r[ci]||'').trim();if(!val)return;
+      const items=splitSlash(val);
+      if(/브랜드|제품/.test(kind))items.forEach(x=>brand.push(x));
+      else items.forEach(x=>proper.push(x));
+    });
+  });
+  const canon=[...new Set([...t.matchAll(/([^\s()\/,]+(?:\s[^\s()\/,]+)?)\s*\(\s*O\s*\)/g)].map(m=>m[1].trim()))];
+  const bans=[...new Set([...t.matchAll(/([^\s()\/,]+(?:\s[^\s()\/,]+)?)\s*\(\s*X\s*\)/g)].map(m=>m[1].trim()))];
+  const pcand=[...new Set([...brand,...canon])];
+  if(pcand.length)R.push({k:'제품명 후보',v:pcand.join(', '),f:'_products',note:'정식 표기가 맞는지 반드시 확인해 주세요'});
+  if(bans.length)R.push({k:'금지 표기 후보',v:bans.join(', '),f:'_bans',note:'제품명 사전의 “추가로 금지할 표기”에 들어갑니다'});
+  const pnames=[...new Set([...proper,...fnPairs.map(f=>f.name)].flatMap(splitSlash))].filter(x=>!/[:：]/.test(x));
+  if(pnames.length)R.push({k:'정식 명칭 후보',v:pnames.join('\n'),f:'properNames',
+    note:'AI가 이 표기를 맞춤법 오류로 잡지 않게 막아 줍니다'});
+
+  /* 3) 플랫폼별 수량 · 광고 고지 — 어느 플랫폼 이야기인지 보고 나눈다
+        설정에 등록된 플랫폼 이름과 별칭으로 찾으므로, 행을 추가하면 자동으로 따라온다 */
+  const PLAT=platforms.map((p,ix)=>{
+    const words=[p.name,...commas(p.alias)].filter(Boolean).map(reEsc);
+    return[words.length?new RegExp(words.join('|'),'i'):null,ix];
+  }).filter(x=>x[0]);
+  const seen={};
+  units.forEach(u=>{
+    const all=[...u.texts,...(u.tables||[]).flatMap(rs=>rs.flat())];
+    const joined=all.join(' ').replace(/\s+/g,' ');
+    let plat=null;
+    all.forEach(x=>{if(x.length<40)PLAT.forEach(([re,ix])=>{if(re.test(x)&&plat===null)plat=ix})});
+    if(plat===null)return;
+    const f={c:'minChar_'+plat,i:'minImg_'+plat,v:'minVid_'+plat,ad:'adText_'+plat,ko:platforms[plat].name};
+    const mc=joined.match(/([\d,]{3,})\s*자[^0-9]{0,14}?이상/);
+    const mi=joined.match(/([\d]{1,3})\s*(?:장|컷)\s*\(?개?\)?\s*이상/);
+    const mv=joined.match(/(?:동영상|영상)\s*(?:클립\s*)?([\d]{1,2})\s*개/);
+    const ad=(joined.match(/(이 (?:포스팅|게시물|콘텐츠)[^.]{5,130}?(?:지원|제공)\s?받아[^.]{0,20}작성되었습니다)/)||
+              joined.match(/(#?\s*광고)(?=\s|$)/)||[])[1];
+    if(mc&&!seen[f.c]){seen[f.c]=1;R.push({k:`최소 글자 수 · ${f.ko}`,v:mc[1].replace(/,/g,''),f:f.c})}
+    if(mi&&!seen[f.i]){seen[f.i]=1;R.push({k:`최소 이미지 수 · ${f.ko}`,v:mi[1],f:f.i})}
+    if(mv&&!seen[f.v]){seen[f.v]=1;R.push({k:`최소 영상 수 · ${f.ko}`,v:mv[1],f:f.v})}
+    if(ad&&!seen[f.ad]){seen[f.ad]=1;
+      R.push({k:`광고 고지 · ${f.ko}`,v:ad.trim(),f:f.ad,note:'가이드에 적힌 그대로 넣었습니다. 표기 방식이 맞는지는 AI가 따로 봅니다'});
+    }
+  });
+
+  /* 5) 필수 해시태그 — 여러 곳에 나온 태그의 교집합 */
+  const groups=[];
+  const collect=x=>{const g=tagsOf(x);if(g.length>=3)groups.push(g)};
+  units.forEach(u=>{u.texts.forEach(collect);(u.tables||[]).forEach(rs=>rs.forEach(r=>r.forEach(collect)))});
+  let common=[];
+  if(groups.length>=2){
+    const cnt={};groups.forEach(g=>[...new Set(g)].forEach(x=>cnt[x]=(cnt[x]||0)+1));
+    const need=Math.max(2,Math.ceil(groups.length*0.5));
+    common=Object.keys(cnt).filter(x=>cnt[x]>=need);
+  }
+  if(!common.length&&groups.length)common=groups[0];
+  if(common.length)R.push({k:'필수 해시태그',v:common.join(' '),f:'hReq',
+    note:groups.length>=2?`${groups.length}곳에 나온 태그 중 겹치는 것만 골랐습니다`:''});
+
+  /* 6) 회차 프리셋 — 주차 · 회차 · 차 미션 · Week · Day 를 모두 본다
+        회차를 나누지 않는 단발성 캠페인이면 아무것도 안 잡히고 그냥 넘어간다 */
+  const RDHEAD=/^\s*(?:\d\s*(?:주차|회차|차\s?미션|차)|(?:week|day|ep|episode)\s*\.?\s*\d)/i;
+  const rds=[];
+  units.forEach(u=>{
+    const all=[...u.texts,...(u.tables||[]).flatMap(rs=>rs.flat())];
+    const head=all.find(x=>RDHEAD.test(x));
+    if(!head)return;
+    const name=((head.match(/(\d\s*(?:주차|회차|차))/)||head.match(/((?:week|day|ep|episode)\s*\.?\s*\d)/i)||[,''])[1]||'')
+      .replace(/\s/g,'')+(/미션/.test(head)?' 미션':'');
+    const feat=all.find(x=>/\(p\.\s*\d+/.test(x))||'';
+    const keys=splitSlash(feat.replace(/\(p\.[^)]*\)/g,'').replace(/,/g,'/')).join(', ');
+    const cand=all.filter(x=>x.length>=14&&x.length<=110&&!/^[#*※]/.test(x)&&!/예시\)/.test(x)&&!/\(p\./.test(x));
+    const topic=cand.sort((a,b)=>b.length-a.length)[0]||'';
+    rds.push({name,topic:topic.replace(/\s+/g,' ').trim(),keys});
+  });
+  L.forEach((l,i)=>{const m=l.match(/^-?\s*(\d)\s*(주차|회차)\s*[:：]\s*(.+)$/);
+    if(m&&!rds.some(r=>r.name.startsWith(m[1]))){const nx=L[i+1]||'',ex2=/^>/.test(nx)?nx.replace(/^>\s*/,''):'';
+      rds.push({plat:'',type:'',name:m[1]+m[2],topic:(m[3]+(ex2&&ex2.length<160?' — '+ex2:'')).trim(),keys:''})}});
+  const byName={};
+  rds.forEach(r=>{const o=byName[r.name];
+    if(!o||(r.keys&&!o.keys)||(r.keys===o.keys&&r.topic.length>o.topic.length))byName[r.name]=r});
+  const rd2=Object.values(byName).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+  rds.length=0;rd2.forEach(r=>rds.push(r));
+  if(rds.length)R.push({k:'미션 프리셋',v:rds.map(r=>`${[r.plat,r.type].filter(Boolean).join(' · ')||'전체 공통'} | ${r.name}: ${r.topic}${r.keys?`  [${r.keys}]`:''}`).join('\n'),f:'_rounds',data:rds});
+
+  /* 7) 이미지 확인 항목 */
+  /* 표 한 칸 안에서 줄을 바꿔 여러 항목을 적는 가이드가 많다.
+     예전에는 줄 단위로만 봐서 「타사 가전(LG」「쿠쿠 등)」처럼 한 문장이 토막 났다.
+     여는 괄호가 닫히지 않았거나 줄이 접속사로 끝나면 다음 줄과 도로 이어 붙인다. */
+  /* 표 한 칸 안에서 줄을 바꿔 적으면 「타사 가전(LG」「쿠쿠 등)」처럼 한 문장이 토막 난다.
+     오직 두 경우만 앞줄에 도로 붙인다 — ① 앞줄의 여는 괄호가 아직 안 닫혔거나
+     ② 이 줄이 닫는 괄호로 시작할 때. 그 밖에는 건드리지 않아 멀쩡한 줄이 뭉치지 않게 한다. */
+  const joinWrapped=arr=>{
+    const out=[];
+    for(const raw of arr){
+      const l=raw.trim();if(!l)continue;
+      const prev=out.length?out[out.length-1]:'';
+      const opened=(prev.match(/[(（[]/g)||[]).length>(prev.match(/[)）\]]/g)||[]).length;
+      const startsClose=/^[)）\]]/.test(l)||/^(?:등|및)[\s)）\]]/.test(l);
+      if(out.length&&(opened||startsClose))out[out.length-1]=(prev+(opened?'':' ')+l).replace(/\s+/g,' ');
+      else out.push(l);
+    }
+    return out;
+  };
+  /* 가이드는 「타사 가전 / 모바일 기기 / 경쟁사 제품 노출 불가」를 한 칸 안에서 줄을 나눠 적는다.
+     줄 단위로만 보면 이게 세 항목으로 쪼개진다. 그래서 표 셀은 통째로 한 덩어리로 보고,
+     셀 안 줄바꿈은 공백으로 이어 붙인다. 표가 없으면 예전처럼 줄 단위로 본다. */
+  const cellChunks=[];
+  tables.forEach(rows=>rows.forEach(r=>r.forEach(cell=>{
+    const one=String(cell||'').split('\n').map(x=>x.trim()).filter(Boolean).join(' ').trim();
+    if(one)cellChunks.push(one);
+  })));
+  const imgSource=cellChunks.length?cellChunks.concat(joinWrapped(L)):joinWrapped(L);
+  const imgHit=l=>/촬영|사진|이미지|영상|컷|화면|노출|초상|저작권|지식재산|로고/.test(l) &&
+      /왜곡|초점|흔들|색감|화질|기울|잘리|가려|보정|필터|수평|로고|라벨|노출|불가|침해|초상|저작권|지식재산/.test(l) &&
+      !/예시|후기|드리고/.test(l);
+  const imgs=[...new Set(imgSource.filter(l=>imgHit(l)&&l.length>=8&&l.length<=140)
+    .map(l=>l.replace(/^[-*※•①-⑨\s]+/,'').replace(/해주세요\.?$|부탁드립니다\.?$/,'').replace(/\s+/g,' ').trim()))]
+    .filter(x=>x.length>=6).slice(0,10);
+  if(imgs.length)R.push({k:'이미지 확인 항목',v:imgs.join('\n'),f:'imgChecks',note:'문장을 짧게 다듬어 쓰시면 좋습니다'});
+  return R;
+}
+function dupWarn(){
+  const ad=SUGG.find(x=>x.f==='adText'),ld=SUGG.find(x=>x.f==='leadText');
+  if(ad&&ld&&(ad.v.includes(ld.v)||ld.v.includes(ad.v)))
+    return '<div class="warn">광고 고지와 상단 필수 문구의 내용이 겹칩니다. <b>하나만 골라 주세요.</b></div>';
+  return '';
+}
+function mergeMissions(list){
+  (list||[]).forEach(r=>{
+    if(!r)return;
+    const key=x=>String(x||'').replace(/\s/g,'');
+    if(!key(r.name)&&!key(r.topic))return;
+    /* 같은 미션인지는 세 축이 다 같아야 판정한다.
+       플랫폼이 다르면 「1주차」가 여러 개 있는 게 정상이다 */
+    const i=missions.findIndex(o=>key(o.name)===key(r.name)&&key(o.plat)===key(r.plat)&&key(o.type)===key(r.type));
+    if(i<0){missions.push({plat:(r.plat||'').trim(),type:(r.type||'').trim(),
+      name:(r.name||'').trim(),topic:(r.topic||'').trim(),keys:(r.keys||'').trim()});return}
+    const o=missions[i];
+    if((r.topic||'').length>(o.topic||'').length)o.topic=r.topic.trim();
+    if((r.keys||'').length>(o.keys||'').length)o.keys=r.keys.trim();
+  });
+}
+function drawSugg(){
+  if(!SUGG.length)return $('#gxBox').innerHTML='<div class="empty">추출된 항목이 없습니다. 가이드 양식에 따라 잡히지 않을 수 있으니 직접 입력해 주세요.</div>';
+  $('#gxBox').innerHTML=dupWarn()+SUGG.map((x,i)=>`<div class="sugg"><input type="checkbox" data-i="${i}" checked>
+    <div style="flex:1"><div class="k">${esc(x.k)}<em>${esc(x.src||'기계')}</em></div>
+    <div class="v">${esc(x.v).replace(/\n/g,'<br>')}</div>
+    ${x.note?`<div class="hint">${esc(x.note)}</div>`:''}</div></div>`).join('')+
+    '<div class="btnrow" style="margin-top:12px"><button class="btn sm" id="gxApply">체크한 항목 적용</button></div>';
+  $('#gxApply').onclick=()=>{
+    const on=[...$('#gxBox').querySelectorAll('input:checked')].map(x=>SUGG[+x.dataset.i]);
+    on.forEach(x=>{
+      if(x.f==='_products')commas(x.v).forEach(c=>{if(!products.some(pp=>pp.canon===c))products.push({canon:c,extra:'',tier:1})});
+      else if(x.f==='_bans'){if(products.length)products[0].extra=[products[0].extra,x.v].filter(Boolean).join(', ')}
+      else if(x.f==='_rounds')mergeMissions(x.data);
+      else if(x.f==='_funcs')(x.data||[]).forEach(b=>{if(!funcs.some(f=>f.a===b.name))
+        funcs.push({a:b.name,b:b.body.trim(),tier:2})});
+      else if(/^(minChar|minImg|minVid|adText)_\d+$/.test(x.f)){
+        /* 플랫폼별 값이다. #minChar_0 같은 입력칸은 없으므로 플랫폼 배열에 직접 넣는다.
+           예전에는 여기서 갈 곳을 못 찾아 조용히 사라졌다 — 가이드에서 읽은 광고 고지가 안 박히던 원인. */
+        const m=x.f.match(/^(\w+?)_(\d+)$/),key=m[1],ix=+m[2];
+        if(platforms[ix])platforms[ix][key]=x.v;
+      }
+      else{const el=$('#'+x.f);if(el)el.value=x.v}
+    });
+    redrawAll();
+    alert(`${on.length}개 항목을 적용했습니다. 값이 맞는지 확인해 주세요.`);
+  };
+}
+$('#gxRun').onclick=()=>{SUGG=extractGuide();drawSugg()};
+const GXPROMPT=()=>`아래 가이드에서 실제로 적혀 있는 내용만 뽑아 JSON으로만 답하십시오.
+
+[뽑을 것]
+products : 제품의 정식 표기. 가이드에 표기법이 명시된 것만.
+proper   : 붙여 써야 하는 기능명이나 브랜드 용어. 가이드에 나온 표기 그대로.
+dropNotices : 아래 [기계가 뽑은 고지 문구 쌍] 중 <b>잘못 짝지어진 것</b>의 name 만 배열로 돌려주십시오.
+           기능·성분·기술 이름이 아닌 것이 name 자리에 온 쌍, 고지 문구가 아닌 운영 안내가 body 로 온 쌍이 대상입니다.
+           맞는 쌍은 절대 넣지 마십시오. 여기 넣은 것만 제외되고 나머지는 그대로 유지됩니다.
+notices  : 기계가 <b>놓친</b> 고지 문구 쌍만 [{"name":"기능명","body":"따라와야 할 문구 전문"}] 형태로.
+           이미 기계가 올바르게 뽑은 것은 다시 넣지 마십시오.
+           ★ name 은 반드시 제품의 기능·성분·기술 이름이어야 합니다.
+             「추가 콘텐츠 업로드 시」「클릭 시」처럼 조건·시점·행동을 가리키는 말이나
+             체험단 운영 안내(혜택·일정·제출 방법)는 절대 넣지 마십시오.
+           ★ body 는 그 기능을 언급했을 때 반드시 따라붙어야 하는 고지·유의 문구여야 합니다.
+             운영 공지나 진행 안내는 고지 문구가 아닙니다.
+           ★ 짝이 명확하지 않으면 넣지 말고 빈 배열로 두십시오. 틀린 쌍은 없느니만 못합니다.
+rounds   : 콘텐츠별 미션. 아래 세 축을 각각 채우십시오. 해당 없으면 빈 문자열로 두십시오.
+           plat  = 이 미션이 적용되는 플랫폼. 가이드에 적힌 이름 그대로. 플랫폼 구분이 없으면 "".
+           type  = 인플루언서 유형(예: 펫, 커플, 1인가구, 뷰티). 유형별로 담을 내용이 갈릴 때만. 없으면 "".
+           name  = 회차 표기 그대로("1주차" "2회차"). 회차를 나누지 않는 단발성이면 "".
+           topic = 가이드 문장 요약.
+           keys  = 가이드가 「필수 키워드」「반드시 포함」처럼 <b>원고에 그대로 들어가야 한다고 못 박은 말</b>만 쉼표로.
+                   그냥 그 회차에서 다루는 기능 이름은 넣지 마십시오. 없으면 빈 문자열로 두십시오.
+           ★ 한 가이드에 여러 플랫폼이 섞여 있고 플랫폼마다 회차 수가 다른 경우가 많습니다.
+             유튜브는 단발성인데 블로그·인스타는 3회차인 식입니다. 플랫폼별로 각각 만들어 주십시오.
+           ★ 유형별로 내용이 갈리면 같은 회차라도 유형 수만큼 행을 나눠 주십시오.
+imgChecks: 사진·영상 촬영 시 지키라고 적힌 주의사항. 가이드 문장을 짧게 다듬어서.
+target   : 이 캠페인의 타깃. 가이드에 적혀 있을 때만.
+
+[규칙]
+- 가이드에 없는 내용은 절대 만들어내지 마십시오.
+- 아래 형식의 설명 문구를 그대로 값에 넣지 마십시오. 실제 가이드에서 읽은 값만 넣으십시오.
+- 해당 내용이 가이드에 없으면 빈 배열 [] 또는 빈 문자열 "" 로 두십시오.
+
+[형식]
+{"products":[],"proper":[],"dropNotices":[],"notices":[{"name":"","body":""}],"rounds":[{"plat":"","type":"","name":"","topic":"","keys":""}],"topic":"","imgChecks":[],"target":""}
+
+[가이드]
+${guideForAI()}`;
+const ECHO=['제품 정식 표기','붙여 써야 하는 기능명','기능명·브랜드 용어','주제 요약','핵심 기능명','쉼표구분',
+  '사진·영상에서 사람이 확인해야 할 항목','타깃 설명','콘텐츠 초반에 강조','1주차','가이드 원문과 대조',
+  '회차 구분이 없을 때','캠페인 콘텐츠 전체에 요구되는 주제','기능명','따라와야 할 문구 전문',
+  '잘못 짝지어진','기계가 놓친'];
+const echoed=v=>{const t=String(v||'').trim();
+  return !t||t.length<2||ECHO.some(e=>t===e||t.includes(e))};
+function applyGX(o){
+  /* 「가이드에서 읽기」를 누르지 않고 AI만 돌리면 기계가 뽑은 값이 통째로 빠졌다.
+     순서를 기억해야 하는 건 도구의 잘못이므로, 여기서 알아서 먼저 돌려 둔다. */
+  if(!SUGG.length&&guideText){SUGG=extractGuide()}
+  /* AI가 형식 설명을 그대로 베껴 답하는 경우가 있어, 가이드 원문에 없는 값은 버린다 */
+  const inGuide=v=>norm(guideText).includes(norm(String(v).slice(0,14)));
+  const clean=a=>(a||[]).map(x=>String(x).trim()).filter(x=>!echoed(x)&&inGuide(x));
+  o.products=clean(o.products);o.proper=clean(o.proper);o.imgChecks=(o.imgChecks||[]).filter(x=>!echoed(x));
+  o.rounds=(o.rounds||[]).filter(r=>r&&!echoed(r.name)&&!echoed(r.topic)&&((r.name||'').trim()||(r.topic||'').trim()));
+  if(echoed(o.target))o.target='';
+  const add=[];
+  o.notices=(o.notices||[]).filter(x=>x&&String(x.name||'').trim()&&String(x.body||'').trim()
+    &&!echoed(x.name)&&!echoed(x.body)&&inGuide(x.body));
+  o.dropNotices=(o.dropNotices||[]).map(x=>String(x||'').trim()).filter(Boolean);
+  if(!o.products.length&&!o.proper.length&&!o.rounds.length&&!o.imgChecks.length&&!o.target
+     &&!o.notices.length&&!o.dropNotices.length){
+    $('#gxBox').innerHTML='<div class="warn">AI 답변에서 쓸 만한 값을 찾지 못했습니다. 형식 설명을 그대로 답했거나 가이드에 없는 내용이라 걸러냈습니다. 다시 시도하시거나 직접 입력해 주세요.</div>';
+    return;
+  }
+  if(o.products&&o.products.length)add.push({k:'제품명 정식 표기',v:o.products.join(', '),f:'_products',src:'AI',note:'가이드 원문과 대조해 주세요'});
+  if(o.proper&&o.proper.length)add.push({k:'정식 명칭',v:o.proper.join('\n'),f:'properNames',src:'AI'});
+  /* 기계가 뽑은 쌍을 통째로 버리지 않는다. AI가 「이건 아니다」라고 짚은 것만 빼고,
+     AI가 새로 찾은 것을 더한다. 맞게 뽑힌 것을 AI 답변 한 번에 날려 버리면 손해가 크다. */
+  const drop=(o.dropNotices||[]).map(x=>String(x).replace(/\s/g,''));
+  const old=SUGG.find(x=>x.f==='_funcs');
+  const kept=(old&&old.data||[]).filter(f=>!drop.includes(String(f.name).replace(/\s/g,'')));
+  const dropped=(old&&old.data||[]).length-kept.length;
+  const merged=kept.concat(o.notices
+    .map(x=>({name:String(x.name).trim(),body:String(x.body).trim()}))
+    .filter(x=>!kept.some(k=>k.name.replace(/\s/g,'')===x.name.replace(/\s/g,''))));
+  if(merged.length&&(o.notices.length||dropped)){
+    SUGG=SUGG.filter(x=>x.f!=='_funcs');
+    add.push({k:'필수 고지 문구 사전',v:merged.map(x=>`${x.name} → ${String(x.body).split('\n')[0].slice(0,46)}…`).join('\n'),
+      f:'_funcs',data:merged,src:'AI',
+      note:`${merged.length}건`+(dropped?` · AI가 잘못 짝지어진 ${dropped}건을 뺐습니다`:'')
+        +(o.notices.length?` · AI가 ${o.notices.length}건을 새로 찾았습니다`:'')});
+  }
+  if(o.rounds&&o.rounds.length)add.push({k:'미션 프리셋',v:o.rounds.map(r=>`${[r.plat,r.type].filter(Boolean).join(' · ')||'전체 공통'} | ${r.name||'(단발성)'}: ${r.topic}`).join('\n'),f:'_rounds',data:o.rounds,src:'AI'});
+  if(!(o.rounds||[]).length&&o.topic&&!echoed(o.topic))
+    add.push({k:'콘텐츠 주제',v:o.topic,f:'mTopic',src:'AI',note:'회차 구분이 없는 캠페인으로 읽었습니다'});
+  if(o.imgChecks&&o.imgChecks.length)add.push({k:'이미지 확인 항목',v:o.imgChecks.join('\n'),f:'imgChecks',src:'AI'});
+  if(o.target)add.push({k:'타깃 설명',v:o.target,f:'mTarget',src:'AI'});
+  /* 예전에는 AI 답이 기계가 찾은 값을 통째로 덮어썼다.
+     기계가 잘 찾은 것까지 한 번에 날아가서 손해가 컸다. 지금은 양쪽을 합친다. */
+  add.forEach(a=>{
+    const j=SUGG.findIndex(y=>y.f===a.f);
+    if(j<0)return SUGG.push(a);
+    const o2=SUGG[j];
+    o2.src='기계 + AI';
+    if(a.data&&o2.data){                       // 쌍 목록은 이름 기준으로 합친다
+      const key=x=>String(x.name||x.k||'').replace(/\s/g,'');
+      const seen3={};o2.data.forEach(x=>seen3[key(x)]=1);
+      a.data.forEach(x=>{if(!seen3[key(x)]){seen3[key(x)]=1;o2.data.push(x)}});
+      o2.v=o2.data.map(x=>x.name?`${x.name} → ${String(x.body||'').split('\n')[0].slice(0,46)}…`:String(x)).join('\n');
+    }else if(a.data){o2.data=a.data;o2.v=a.v}
+    else{                                      // 줄 목록은 줄 단위로 합친다
+      const sep=/\n/.test(o2.v||'')||/\n/.test(a.v||'')?'\n':', ';
+      const parts=String(o2.v||'').split(/\n|,\s*/).concat(String(a.v||'').split(/\n|,\s*/))
+        .map(x=>x.trim()).filter(Boolean);
+      const seen4={},keep=[];
+      parts.forEach(x=>{const k=x.replace(/\s/g,'');if(seen4[k])return;seen4[k]=1;keep.push(x)});
+      o2.v=keep.join(sep);
+    }
+    const added=(a.note||'').match(/\d+/);
+    o2.note='기계가 찾은 것에 AI가 찾은 것을 더했습니다'+(a.note?` · ${a.note}`:'');
+  });
+  drawSugg();
+}
+$('#gxCopy').onclick=()=>{
+  navigator.clipboard.writeText(GXPROMPT()).then(
+    ()=>alert('복사했습니다. 쓰시는 AI에 붙여넣으신 뒤, 답변을 아래 칸에 붙여넣어 주세요.'),()=>alert('복사에 실패했습니다.'));
+  $('#gxBox').innerHTML=`<div class="warn">복사한 프롬프트에는 <b>가이드 전문이 담깁니다.</b> 회사에서 승인한 AI인지 확인하신 뒤 사용해 주세요.</div>
+    <label class="f">1) 복사한 프롬프트를 AI에 넣고 &nbsp; 2) 받은 답변을 여기에 붙여넣어 주세요</label>
+    <textarea id="gxPaste" placeholder="AI가 준 JSON을 그대로 붙여넣어 주세요" style="min-height:90px"></textarea>
+    <div class="btnrow" style="margin-top:8px"><button class="btn sm" id="gxMerge">답변 읽어 제안 만들기</button></div>`;
+  $('#gxMerge').onclick=()=>{try{const c=$('#gxPaste').value.replace(/```json|```/g,'');
+    applyGX(JSON.parse(c.slice(c.indexOf('{'),c.lastIndexOf('}')+1)))}catch(e){alert('읽지 못했습니다 — '+e.message)}};
+};
+$('#gxAI').onclick=async()=>{
+  const b=$('#gxAI');b.disabled=true;b.textContent='읽는 중…';
+  try{const c=String(await callAI(GXPROMPT())).replace(/```json|```/g,'');
+    applyGX(JSON.parse(c.slice(c.indexOf('{'),c.lastIndexOf('}')+1)));
+  }catch(e){alert('AI 보완에 실패했습니다 — '+e.message)}
+  b.disabled=false;b.textContent='AI로 보완하기';
+};
+function syncGX(){
+  const has=!!guideText,ok=has&&!!aiCfg.key;
+  $('#gxRun').disabled=!has;$('#gxCopy').disabled=!has;$('#gxAI').disabled=!ok;
+  $('#gxWhy').textContent=!has?'가이드 파일을 먼저 올려 주세요.'
+    :!aiCfg.key?'“AI로 보완하기”는 AI 설정 탭에 키를 넣으셔야 켜집니다. 키가 없으시면 프롬프트를 복사해 쓰세요.':'';
+}
+$('#mGuide').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{const z=await unzip(await f.arrayBuffer());
+    GUIDE=await parseGuide(z,extOf(f.name)==='docx'?'docx':extOf(f.name)==='xlsx'?'xlsx':'pptx');
+    guideText=GUIDE.text;
+    $('#mGuideOut').innerHTML=`<span style="color:var(--ok)">읽었습니다 — ${guideText.length.toLocaleString()}자 · 표 ${GUIDE.tables.length}개</span>`
+      +(guideText.length>GUIDEMAX?`<br><b style="color:var(--red)">${GUIDEMAX.toLocaleString()}자를 넘어 뒷부분은 AI에 전달되지 않습니다. 가이드를 나눠 올리시거나 필요한 부분만 남겨 주세요.</b>`:'');
+  }catch(err){$('#mGuideOut').innerHTML=`<span style="color:var(--red)">읽기 실패 — ${esc(err.message)}</span>`}
+  syncGX();
+};
+
+/* ══ AI 설정 ══ */
+function drawAI(){
+  $('#aiTasks').innerHTML=BASE.filter(b=>b.who==='AI').map(b=>`<div class="opt">
+    <div class="sw ${base[b.k]?'on':''}" data-k="${b.k}"></div>
+    <div class="tx"><b>${b.t} <span class="chip tb${b.tier}" style="font-size:9px;padding:1px 5px">T${b.tier}</span></b><span>${b.d}</span></div></div>`).join('');
+  $$('#aiTasks .sw').forEach(el=>el.onclick=()=>{base[el.dataset.k]=!base[el.dataset.k];saveBase();drawAI();drawBase()});
+}
+$$('#aiMode button').forEach(b=>b.onclick=()=>{
+  aiMode=b.dataset.m;$$('#aiMode button').forEach(x=>x.classList.toggle('on',x===b));
+  $('#aiKeyBox').style.display=aiMode==='key'?'':'none';
+  $('#copyWarn').style.display=aiMode==='copy'?'':'none';
+  S.set('v4_aimode',aiMode);syncGX();
+});
+function syncProv(){$('#aiModel').placeholder=PROV[aiCfg.prov].model||'모델 이름';
+  $('#aiUrlRow').style.display=aiCfg.prov==='custom'?'':'none'}
+function saveAi(){
+  const noSave=$('#aiNoSave')&&$('#aiNoSave').checked;
+  /* 키를 남기지 않기로 하셨으면 키만 뺀 나머지를 저장한다. 키는 이번 창에서만 살아 있는다 */
+  S.set('v4_ai',JSON.stringify(noSave?Object.assign({},aiCfg,{key:''}):aiCfg));
+  S.set('v4_aiNoSave',noSave?'1':'');
+}
+['aiProv','aiModel','aiUrl','aiKey'].forEach(id=>{
+  $('#'+id).oninput=$('#'+id).onchange=()=>{
+    aiCfg={prov:$('#aiProv').value,model:$('#aiModel').value,url:$('#aiUrl').value,key:$('#aiKey').value};
+    syncProv();saveAi();syncGX()};
+});
+if($('#aiNoSave'))$('#aiNoSave').onchange=()=>{
+  saveAi();
+  if($('#aiNoSave').checked)alert('창을 닫으면 키가 지워집니다.\n\n다시 여실 때 키를 넣어 주세요.');
+};
+
+/* ══════════════════════════════════════════════════════
+   review.js  —  검수 실행 · 검수본 파일 만들기 · 이력 · 시작
+   ※ src/ 의 자바스크립트 파일들은 build.sh 가 순서대로 이어 붙여
+      하나의 스크립트가 됩니다. 파일이 나뉘어 있어도 서로의
+      함수와 값을 그대로 씁니다. 순서는 바꾸지 마십시오.
+   ══════════════════════════════════════════════════════ */
+
+/* ══ 검수 ══ */
+let DOC=null,ZIP=null,FNAME='',sel=new Set(),t0=0,LAST=null,SPLIT=true;
+const drop=$('#drop'),fin=$('#file');
+drop.onclick=()=>fin.click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')};
+drop.ondragleave=()=>drop.classList.remove('over');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');if(e.dataTransfer.files[0])load(e.dataTransfer.files[0])};
+fin.onchange=e=>{if(e.target.files[0])load(e.target.files[0])};
+const extOf=n=>(String(n).match(/\.([a-z0-9]+)$/i)||[,''])[1].toLowerCase();
+async function load(f){
+  /* 압축을 미리 풀지는 않지만, 원본 바이트는 ZIP 을 들고 있는 동안 계속 메모리에 남는다.
+     읽기에 실패하더라도 앞 파일은 먼저 놓아 준다. 그러지 않으면 큰 파일을 연달아 여실 때
+     두 개가 동시에 메모리에 올라가 탭이 죽을 수 있다. */
+  ZIP=null;DOC=null;LAST=null;SHOTS=[];sel=new Set();
+  $('#blockCard').style.display='none';
+  $('#fileMsg').innerHTML='';$('#result').innerHTML='';
+  const ext=extOf(f.name);
+  if(ext==='hwp'||ext==='hwpx')
+    return $('#fileMsg').innerHTML='<div class="note err" style="margin-top:14px">한글 문서는 아직 읽지 못합니다. <b>워드(.docx)로 저장해서</b> 다시 올려 주세요.</div>';
+  if(ext==='pdf')
+    return $('#fileMsg').innerHTML='<div class="note err" style="margin-top:14px">PDF는 읽지 못합니다. 원본 문서 파일(.docx · .pptx · .xlsx)로 올려 주세요.</div>';
+  if(!EXTS.includes(ext))
+    return $('#fileMsg').innerHTML='<div class="note err" style="margin-top:14px">.docx · .pptx · .xlsx만 읽습니다.</div>';
+  /* 수십 MB 짜리 원고는 읽는 데 시간이 걸린다. 아무 표시가 없으면 멈춘 줄 알고 창을 닫으신다 */
+  const MB=f.size/1048576;
+  $('#fileMsg').innerHTML=`<div class="note">읽는 중입니다${MB>8?` — ${MB.toFixed(0)}MB 로 큰 편이라 잠시 걸립니다. 화면이 멈춘 것처럼 보여도 기다려 주세요.`:'…'}</div>`;
+  await new Promise(r=>setTimeout(r,0));      // 안내가 먼저 그려지도록 한 번 넘긴다
+  try{
+    t0=Date.now();FNAME=f.name;ZIP=await unzip(await f.arrayBuffer());
+    DOC=ext==='docx'?await parseDocx(ZIP):ext==='xlsx'?await parseXlsx(ZIP):await parsePptx(ZIP);
+    /* 파일 형식은 어느 파서로 읽을지만 정한다. 검수 기준은 아래에서 사용자가 고른다 */
+        $('#fileMsg').innerHTML=`<div class="note ok" style="margin-top:14px"><b>${esc(f.name)}</b> — 블록 ${DOC.blocks.length}개 · 이미지 ${DOC.images}장 · 영상 ${DOC.videos}개</div>`;
+    SPLIT=true;sel=new Set(guessBody(DOC.blocks));drawBlocks();$('#blockCard').style.display='';
+  }catch(e){$('#fileMsg').innerHTML=`<div class="note err" style="margin-top:14px">읽기 실패 — ${esc(e.message)}</div>`}
+}
+function drawBlocks(){
+  const np=DOC.people?DOC.people.length:0;
+  let head='';
+  if(np>1)head=`<div class="note ok">${SPLIT?`${np}명으로 나눠 검수합니다`:'전체를 한 번에 검수합니다'} — ${DOC.people.map(p=>esc(p.name)).join(', ')}
+    <button class="btn ghost sm" id="unsplit" style="margin-left:10px">${SPLIT?'한 번에 검수하기':'사람별로 나누기'}</button></div>`;
+  else if(DOC.type!=='docx')head=`<div class="note">사람 구분을 찾지 못해 전체를 한 번에 검수합니다.${
+    DOC.roleFound?' 표 머리말을 읽어 본문을 골랐습니다.':' 표 머리말을 찾지 못해 길이와 해시태그로 본문을 추측했습니다.'}
+    <br><b>여러 명의 원고가 한 파일에 있다면</b> 아래 각 칸의 오른쪽 목록에서 작성자를 지정해 주세요. 지정하시면 사람별로 나눠 검수합니다.
+    <br>지정하지 않으시면 고지 문구 중복 검사가 다른 사람 원고와 겹친 것을 잘못 잡을 수 있습니다.</div>`;
+  const hb=$('#blockHead');if(hb)hb.innerHTML=head
+    +`<div class="btnrow" style="margin:0 0 16px">
+       <button class="btn ghost sm" id="selAll">전체 선택</button>
+       <button class="btn ghost sm" id="selNone">전체 해제</button>
+       <button class="btn ghost sm" id="selAuto">자동 선택으로</button>
+       <span class="hint" style="margin:0">칸이 많을 때는 전부 넣고 AI에 맡기셔도 됩니다.</span></div>`;
+  const names=[...new Set(DOC.blocks.map(b=>b.person).filter(Boolean))];
+  const opt=b=>`<select class="pw" data-b="${b.id}" title="이 부분을 누가 쓴 원고인지 지정합니다">
+    <option value="">사람 미지정</option>${names.map(n=>
+      `<option value="${esc(n)}"${b.person===n?' selected':''}>${esc(n)}</option>`).join('')}
+    <option value="__new">+ 새 사람 추가…</option></select>`;
+  $('#blocks').innerHTML=DOC.blocks.map(b=>`<div class="chunk ${sel.has(b.id)?'sel':''} ${b.skip?'skip':''}" data-b="${b.id}">
+    <div class="m"><span>${esc(b.kind)}</span><span>${esc(b.meta)}</span>${DOC.type==='docx'?'':opt(b)}</div>
+    <div class="t">${esc(b.text.slice(0,140)).replace(/\n/g,' ')}…</div></div>`).join('');
+  /* 칸 하나하나에 핸들러를 다는 대신 바깥 상자에 한 번만 건다.
+     칸이 수십 개여도 핸들러는 두 개뿐이고, 다시 그려도 다시 달 필요가 없다.
+     (아래 bindBlocks 에서 시작할 때 한 번만 건다) */
+  const ub=$('#unsplit');if(ub)ub.onclick=()=>{SPLIT=!SPLIT;drawBlocks()};
+  const sa=$('#selAll');if(sa)sa.onclick=()=>{sel=new Set(DOC.blocks.map(b=>b.id));drawBlocks()};
+  const sn=$('#selNone');if(sn)sn.onclick=()=>{sel=new Set();drawBlocks()};
+  const su=$('#selAuto');if(su)su.onclick=()=>{sel=new Set(guessBody(DOC.blocks));drawBlocks()};
+  $('#runHint').textContent=SPLIT&&np>1?`사람별 자동 선택 · 총 ${sel.size}개 블록`
+    :`본문 ${sel.size}개 선택 · ${bodyText().length.toLocaleString()}자`;
+}
+/* 시작할 때 한 번만 건다. drawBlocks 가 안을 다시 그려도 이 핸들러는 살아 있다 */
+function bindBlocks(){
+  const box=$('#blocks');if(!box||box.dataset.bound)return;
+  box.dataset.bound='1';
+  box.addEventListener('click',e=>{
+    if(e.target.closest('.pw'))return;                 // 사람 지정은 선택 토글이 아니다
+    const el=e.target.closest('.chunk');if(!el)return;
+    const id=+el.dataset.b;sel.has(id)?sel.delete(id):sel.add(id);drawBlocks();
+  });
+  /* 자동 인식이 틀렸거나 아예 못 찾았을 때 사람이 직접 고친다.
+     이걸 고치면 사람별 검수가 그대로 되살아난다. */
+  box.addEventListener('change',e=>{
+    const s2=e.target.closest('.pw');if(!s2)return;
+    const b=DOC.blocks.find(x=>x.id===+s2.dataset.b);if(!b)return;
+    let v=s2.value;
+    if(v==='__new'){v=(prompt('이 부분을 쓴 사람의 이름이나 계정을 적어 주세요.')||'').trim();if(!v)return drawBlocks()}
+    b.person=v;rebuildPeople();drawBlocks();
+  });
+}
+const bodyText=()=>DOC?DOC.blocks.filter(b=>sel.has(b.id)).map(b=>b.text).join('\n'):'';
+/* 블록의 사람 표시가 바뀌면 사람 목록과 각자의 원고를 다시 짠다 */
+function rebuildPeople(){
+  if(!DOC)return;
+  const order=[];DOC.blocks.forEach(b=>{if(b.person&&!order.includes(b.person))order.push(b.person)});
+  const old={};(DOC.people||[]).forEach(p=>old[p.name]=p);
+  DOC.people=order.map(n=>{
+    const bs=DOC.blocks.filter(b=>b.person===n);
+    const p=old[n]||{name:n,images:0,videos:0};
+    p.blocks=bs;p.raw=bs.filter(b=>!b.skip&&b.role!=='hdr').map(b=>b.text).join('\n');
+    return p;
+  });
+  if(DOC.people.length>1)SPLIT=true;
+}
+
+const RANK={'승인':0,'조건부\n승인':1,'수정 후\n재검토':2,'게재 불가':3};
+$('#run').onclick=async()=>{
+  if(!CURPLAT){$('#plSel').scrollIntoView({behavior:'smooth',block:'center'});
+    return alert('검수 기준 플랫폼을 먼저 골라 주세요.\n\n검수 탭 맨 위 「01 검수 기준」에 있습니다.')}
+  /* 회차 정보는 필수가 아니다. 단발성 캠페인은 회차 자체가 없다.
+     주제를 안 넣으셨으면 「회차 주제 부합」 AI 항목만 건너뛴다. (buildPrompt 에서 처리) */
+  const groups=[];
+  if(SPLIT&&DOC.people&&DOC.people.length>1){
+    DOC.people.forEach(pp=>{
+      const bs=pp.blocks.filter(b=>sel.has(b.id));
+      const body=(bs.length?bs:pp.blocks.filter(b=>b.role==='mention')).map(b=>b.text).join('\n');
+      const d={type:'pptx',raw:pp.raw,images:pp.images,videos:pp.videos};
+      const items=machineCheck(d,body);
+      groups.push({name:pp.name,items,v:verdict(items),body,doc:d});
+    });
+  }else{
+    /* 슬라이드·시트가 여럿인데 사람을 못 나눴다면 여러 사람이 섞였을 수 있다 */
+    const units=new Set(DOC.blocks.map(b=>b.slide||b.sheet).filter(Boolean));
+    LUMPED=DOC.type!=='docx'&&units.size>1;
+    const items=machineCheck(DOC,bodyText());
+    LUMPED=false;
+    groups.push({name:'',items,v:verdict(items),body:bodyText(),doc:DOC});
+  }
+  const worst=groups.slice().sort((a,b)=>RANK[b.v.v]-RANK[a.v.v])[0];
+  LAST={groups,items:groups.flatMap(g=>g.items),v:worst.v,mins:(Date.now()-t0)/60000};
+  render();$('#result').scrollIntoView({behavior:'smooth',block:'start'});
+  if(aiTaskList().length){
+    if(aiMode==='key'&&aiCfg.key){
+      setAiBox('<span class="spin"></span>AI가 검수하고 있습니다…');
+      try{mergeAI(parseAI(await callAI(buildPrompt(DOC))))}
+      catch(e){setAiBox(`<div class="note err">AI 검수 실패 — ${esc(e.message)}<br>키와 모델 이름을 확인하시거나, 프롬프트 복사 방식으로 바꿔 주세요.</div>`)}
+    }else renderCopyBox();
+  }
+  pushHist();
+};
+function mergeAI(r){
+  LAST.groups.forEach(g=>{
+    g.items.forEach(i=>{if(i.src==='기계'&&r.dismiss.some(d=>i.label.includes(d)||d.includes(i.label)))i.off=true});
+  });
+  const key=x=>String(x||'').replace(/\s/g,'').toLowerCase();
+  /* 기계가 사람을 못 나눴어도 AI가 구분해 냈다면 그 기준으로 나눠 준다.
+     기계 지적은 누구 것인지 알 수 없으므로 공통으로 남기고, AI 지적만 사람별로 붙인다. */
+  /* AI는 문제 있는 사람만 적어 보내는 경향이 있다. 그러면 멀쩡한 사람이 결과에서 통째로 사라진다.
+     그래서 명단(people)을 따로 받아 문제 없는 사람도 자리를 만들어 둔다. */
+  const who=[...new Set(
+    (r.people||[]).map(x=>String(x||'').trim())
+      .concat(r.issues.map(i=>String(i.person||'').trim()))
+      .filter(Boolean))];
+  if(LAST.groups.length===1&&who.length>1){
+    const b0=LAST.groups[0];
+    b0.name='전체 공통 (작성자 미상)';
+    b0.items.unshift(it(3,'작성자 구분 안내','warn',
+      '아래 기계 지적은 파일에서 작성자를 나누지 못해 전체를 한 번에 검사한 결과입니다. '
+      +'특정 한 사람의 문제가 아닐 수 있으니 누구에게 해당하는지 확인해 주세요.','기계'));
+    who.forEach(n=>LAST.groups.push({name:n,items:[],v:verdict([]),body:b0.body,doc:b0.doc,aiOnly:true}));
+    if(DOC)DOC.aiSplit=who;
+  }
+  r.issues.forEach(is=>{
+    let g=null;
+    if(is.person&&LAST.groups.length>1)
+      g=LAST.groups.find(x=>key(x.name)===key(is.person))||LAST.groups.find(x=>key(x.name).includes(key(is.person)));
+    (g||LAST.groups[0]).items.push(is);
+  });
+  regroupVerdicts();
+  keepCaret(render);
+  /* 멘션은 사람별로 갈렸는데 사진은 「전체 공통」에 남는 경우가 있다.
+     슬라이드에 이월해 둔 이름(slidePerson)과 실제 갈라진 사람 이름을 맞춰 사진을 재배정한다.
+     AI가 나눈 경우든 기계가 나눈 경우든 똑같이 돌린다. */
+  const realNames=LAST.groups.map(g=>g.name).filter(n=>n&&!/미상|전체 공통/.test(n));
+  if(DOC&&DOC.type==='pptx'&&realNames.length>1)reassignShots(DOC.aiSplit||realNames);
+  if(DOC&&DOC.aiSplit)setAiBox(`<div class="note ok">AI가 ${DOC.aiSplit.length}명을 구분해 냈습니다 — `
+    +`${DOC.aiSplit.map(esc).join(', ')}. AI 지적은 사람별로 나눠 표시했고, `
+    +`기계 지적은 누구 것인지 알 수 없어 「전체 공통」에 남겼습니다.</div>`);
+}
+/* 항목을 빼거나 되살리면 사람별 판정과 대표 판정을 다시 계산해야 한다 */
+function regroupVerdicts(){
+  LAST.groups.forEach(g=>g.v=verdict(g.items));
+  LAST.items=LAST.groups.flatMap(g=>g.items);
+  LAST.v=LAST.groups.slice().sort((a,b)=>RANK[b.v.v]-RANK[a.v.v])[0].v;
+}
+function setAiBox(h){const b=$('#aiBox');if(b)b.innerHTML=h}
+function renderCopyBox(){
+  setAiBox(`${aiMode==='key'?'<div class="note">AI 설정 탭에 키를 넣으시면 자동으로 돌아갑니다. 지금은 아래 방식으로 쓰실 수 있습니다.</div>':''}
+    <div class="warn"><b>전송되는 내용:</b> 원고 전문 · 가이드 전문 · 캠페인 설정 · 회차 정보.
+      복사 후에는 도구가 관여할 수 없습니다. <b>회사에서 승인한 AI인지 확인하신 뒤 사용해 주세요.</b></div>
+    <div class="btnrow" style="margin-bottom:12px"><button class="btn ghost sm" id="cpBtn">프롬프트 복사</button></div>
+    <label class="f">AI 답변 붙여넣기</label>
+    <textarea id="aiPaste" placeholder="AI가 준 JSON을 그대로 붙여넣어 주세요"></textarea>
+    <div class="btnrow" style="margin-top:8px"><button class="btn sm" id="mergeBtn">결과 합치기</button></div>`);
+  $('#cpBtn').onclick=()=>navigator.clipboard.writeText(buildPrompt(DOC))
+    .then(()=>alert('복사했습니다. 쓰시는 AI에 붙여넣어 주세요.'),()=>alert('복사에 실패했습니다.'));
+  $('#mergeBtn').onclick=()=>{try{mergeAI(parseAI($('#aiPaste').value))}catch(e){alert('붙여넣은 내용을 읽지 못했습니다 — '+e.message)}};
+}
+const today=()=>{const d=new Date();return`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`};
+
+const ICON=i=>i.off?'제외':i.status==='pass'?'통과':i.status==='warn'?'확인':'위반';
+const OFFN=i=>!i.off?'':(i.byUser?' · 검수자가 뺐습니다':' · AI 판단으로 제외했습니다');
+/* 지적 하나를 뺄 때 결과 전체를 다시 그리면 화면이 통째로 깜빡인다.
+   바뀐 항목과 숫자만 제자리에서 고쳐 준다. */
+function paintItem(el){
+  const g=LAST.groups[+el.dataset.g];if(!g)return;
+  const i=g.items[+el.dataset.i];if(!i)return;
+  el.className='item '+(i.off?'off':i.status);
+  const ic=el.querySelector('.ic');if(ic)ic.textContent=ICON(i);
+  const ub=el.querySelector('.undo');if(ub)ub.textContent=i.off?'되살리기':'이 지적 빼기';
+  const on=el.querySelector('.offn');if(on)on.textContent=OFFN(i);
+  const fx=el.querySelector('.fix');if(fx)fx.style.display=i.off?'none':'';
+}
+function repaintTotals(){
+  regroupVerdicts();
+  LAST.groups.forEach((g,ix)=>{
+    const st=$('#st'+ix);if(st)st.outerHTML=statHTML(g.items,g.body.length,ix);
+    const bd=$('#bd'+ix);
+    if(bd){const col=g.v.cls==='s-no'?'var(--red)':g.v.cls==='s-fix'?'var(--amber)':'var(--green)';
+      bd.style.background=col;bd.textContent=g.v.v.replace('\n',' ')}
+  });
+  const vs=$('#vStamp');
+  if(vs){vs.className='stamp '+LAST.v.cls;
+    vs.innerHTML=`<div class="lb">검수 완료</div><div class="vv">${LAST.v.v.replace('\n','<br>')}</div><div class="dt">${today()}</div>`}
+}
+function itemsHTML(items){
+  let h='';
+  [1,2,3].forEach(t=>{
+    const list=items.filter(i=>i.tier===t);if(!list.length)return;
+    const nm={1:'게재 불가 수준',2:'수정 필요',3:'권고'};
+    list.sort((a,b)=>({fail:0,warn:1,pass:2})[a.status]-({fail:0,warn:1,pass:2})[b.status]);
+    h+=`<div class="tier"><h3><span class="chip tb${t}">Tier ${t}</span> ${nm[t]}</h3>`+
+      list.map(i=>{
+        const gi=LAST.groups.findIndex(g=>g.items.includes(i)),ii=(LAST.groups[gi]||{items:[]}).items.indexOf(i);
+        const can=i.status!=='pass';     // 통과 항목은 뺄 이유가 없다
+        return `<div class="item ${i.off?'off':i.status}" data-g="${gi}" data-i="${ii}"><span class="ic">${ICON(i)}</span>
+        <span class="bd"><b>${esc(i.label)}<span class="src ${i.src==='AI'?'ai':''}">${i.src}</span>${
+          can?`<button class="undo">${i.off?'되살리기':'이 지적 빼기'}</button>`:''}</b>
+        <span>${esc(i.detail)}<i class="offn" style="font-style:normal">${OFFN(i)}</i></span>
+        ${i.fix?`<span class="fix"${i.off?' style="display:none"':''}><em>수정</em><i>${esc((i.detail.match(/「([^」]+)」/)||[,'현재'])[1])}</i> → <b>${esc(i.fix)}</b></span>`:''}</span></div>`}).join('')+'</div>';
+  });
+  return h;
+}
+function statHTML(items,chars,gi){
+  const L=live(items);
+  const f1=L.filter(i=>i.tier===1&&i.status==='fail').length;
+  const f2=L.filter(i=>i.tier===2&&i.status==='fail').length;
+  const wn=L.filter(i=>i.status==='warn').length;
+  return `<div class="stat" id="st${gi||0}">
+    <div><div class="k">Tier 1 위반</div><div class="v" style="color:${f1?'var(--red)':'var(--green)'}">${f1}</div></div>
+    <div><div class="k">Tier 2 위반</div><div class="v" style="color:${f2?'var(--amber)':'var(--green)'}">${f2}</div></div>
+    <div><div class="k">확인 필요</div><div class="v">${wn}</div></div>
+    <div><div class="k">본문 글자수</div><div class="v">${chars.toLocaleString()}</div></div></div>`;
+}
+/* 결과 화면도 바깥 상자에 한 번만 건다 */
+/* AI가 찾아낸 이름을 슬라이드 글에서 찾아 그 장의 사진을 그 사람 몫으로 옮긴다.
+   체크와 메모는 SHOTS 에 담겨 있으므로 다시 나눠도 사라지지 않는다. */
+async function reassignShots(names){
+  if(!DOC||DOC.type!=='pptx'||!ZIP||!SHOTS.length)return;
+  const key=x=>String(x||'').replace(/\s/g,'').toLowerCase();
+  /* 슬라이드를 파일 순서대로 훑는다. 합본은 「표지(이름) → 그 사람 사진들」이 반복되는 구조라,
+     이름이 안 적힌 사진 슬라이드는 바로 앞에서 확정된 사람에게 이어 붙이면 맞는다.
+     AI가 멘션으로 사람은 갈랐는데 사진 슬라이드엔 이름이 없어 이미지만 「전체 공통」에 남던 문제를 잡는다. */
+  const map={};
+  const ns=Object.keys(DOC.slidePics||{}).sort((a,b)=>(+a.match(/\d+/)[0])-(+b.match(/\d+/)[0]));
+  let carry=null;
+  for(const n of ns){
+    /* ① 이 슬라이드 본문에 이름이 있으면 그 사람 */
+    const txt=key(shapeText(await readEntry(ZIP,n)||''));
+    let hit=names.find(nm=>txt.includes(key(nm)));
+    /* ② 없으면 파싱 때 이월해 둔 작성자 */
+    if(!hit&&DOC.slidePerson&&DOC.slidePerson[n])
+      hit=names.find(nm=>key(nm)===key(DOC.slidePerson[n]));
+    /* ③ 그래도 없으면 바로 앞에서 확정된 사람에게 이어 붙인다 */
+    if(!hit&&carry)hit=carry;
+    if(hit){map[n]=hit;carry=hit}
+  }
+  if(!Object.keys(map).length)return;
+  DOC.slidePerson=Object.assign({},DOC.slidePerson,map);
+  let changed=false;
+  SHOTS.forEach(s=>{if(map[s.slide]&&s.person!==map[s.slide]){s.person=map[s.slide];changed=true}});
+  if(changed)keepCaret(render);
+}
+function bindResult(){
+  const box=$('#result');if(!box||box.dataset.bound)return;
+  box.dataset.bound='1';
+  /* 체크와 메모는 적는 즉시 SHOTS 에 담는다. 그래야 화면을 다시 그려도 남는다 */
+  const grab=el=>{
+    const c=el.closest('.chk');if(!c)return;
+    const i=+c.dataset.s;if(isNaN(i)||!SHOTS[i])return;
+    SHOTS[i].checks=[...c.querySelectorAll('input:checked')].map(x=>x.dataset.t);
+    const ta=c.querySelector('textarea');SHOTS[i].memo=ta?ta.value:'';
+  };
+  box.addEventListener('change',e=>{if(e.target.closest('.chk'))grab(e.target)});
+  box.addEventListener('input',e=>{if(e.target.closest('.chk'))grab(e.target)});
+  box.addEventListener('click',e=>{
+    const b=e.target.closest('.undo');if(!b)return;
+    const el=b.closest('.item'),g=LAST.groups[+el.dataset.g];if(!g)return;
+    const it2=g.items[+el.dataset.i];if(!it2)return;
+    it2.off=!it2.off;it2.byUser=it2.off;
+    paintItem(el);repaintTotals();      // 화면 전체를 다시 그리지 않는다
+  });
+}
+/* 화면을 다시 그리면 글을 쓰던 칸이 통째로 새로 만들어져 커서가 튕겨 나간다.
+   AI 검수가 끝나는 순간 메모를 쓰고 있으면 글자는 남아도 흐름이 끊긴다.
+   어디에 커서가 있었는지 기억해 두었다가 그 자리로 돌려놓는다. */
+function keepCaret(draw){
+  const el=document.activeElement;
+  /* 어느 칸에 커서가 있었는지 표시값으로 기억한다. 사진 목록이든 설정 표든 같은 방법으로 찾는다 */
+  const box=el&&el.closest?el.closest('[data-s],[data-i]'):null;
+  if(!box||!el.dataset)return draw();
+  const host=el.closest('[id]'),hid=host?host.id:'';
+  const keys=Object.keys(el.dataset).concat(Object.keys(box.dataset));
+  const pick=k=>(el.dataset[k]!==undefined?el.dataset[k]:box.dataset[k]);
+  const tag=el.tagName.toLowerCase();
+  const pos=(typeof el.selectionStart==='number')?el.selectionStart:null;
+  const attr=k=>`[data-${k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())}="${pick(k)}"]`;
+  draw();
+  const q=(hid?'#'+hid+' ':'')+[...new Set(keys)].map(k=>attr(k)).join('');
+  const back=$(q+' '+tag)||$(tag+q)||$(q);
+  if(!back||!back.focus)return;
+  const d=back.closest('details');if(d)d.open=true;      // 접혀 있으면 펴 준다
+  try{back.focus();if(pos!=null&&back.setSelectionRange)back.setSelectionRange(pos,pos)}catch(e){}
+}
+function render(){
+  const G=LAST.groups,multi=G.length>1,v=LAST.v;
+  let h=`<div class="sheet"><div class="shead"><div class="snum">03</div><div class="stitle">
+    <h2>검수 결과</h2><p><b>${esc((CURPLAT&&CURPLAT.name)||'원고')}</b> 기준으로 처리했습니다.${(()=>{
+      if(!multi)return DOC.people&&DOC.people.length>1?' 한 번에 검수했습니다.':'';
+      const unknown=G.filter(g=>/미상|전체 공통/.test(g.name)).length;
+      const real=G.length-unknown;
+      return unknown
+        ? ` 작성자 ${real}명으로 나눠 검수했고, 누구 것인지 못 가른 지적은 「전체 공통」으로 따로 모았습니다 (묶음 ${G.length}개).`
+        : ` 작성자 ${real}명으로 나눠 검수했습니다.`;
+    })()}</p>
+    </div></div><div class="sbody">
+    <div class="warn">이 결과는 검수를 <b>보조</b>하기 위한 것입니다. 최종 판단과 책임은 검수자에게 있습니다.
+      통과로 표시된 항목도 실제로는 문제가 있을 수 있으니 원고를 직접 확인해 주세요.</div>
+    <div class="verdict"><div class="stamp ${v.cls}" id="vStamp"><div class="lb">검수 완료</div><div class="vv">${v.v.replace('\n','<br>')}</div><div class="dt">${today()}</div></div>
+    <div class="vwhy"><h3>${esc(FNAME)}</h3><p>${multi?'가장 낮은 판정을 대표로 표시했습니다. 아래에서 사람별 결과를 확인해 주세요.':v.why}</p></div></div>`;
+  if(multi){
+    G.forEach((g,gi)=>{
+      const col=g.v.cls==='s-no'?'var(--red)':g.v.cls==='s-fix'?'var(--amber)':'var(--green)';
+      h+=`<div class="person"><h4>${esc(g.name)}<span class="badge" id="bd${gi}" style="background:${col}">${g.v.v.replace('\n',' ')}</span></h4>
+        ${statHTML(g.items,g.body.length,gi)}${itemsHTML(g.items)}</div>`;
+    });
+  }else{
+    h+=statHTML(G[0].items,G[0].body.length,0)+itemsHTML(G[0].items);
+  }
+  h+=`<div class="field"><div class="lbl">AI 검수</div><div id="aiBox"></div>
+    <div class="warn" style="margin-top:12px">AI 판단은 틀릴 수 있습니다. 지적한 것과 <b>지적하지 않은 것 모두</b> 확인해 주세요.</div></div>`;
+  /* 화면을 다시 그릴 때마다 목록을 새로 만든다. 그대로 두면 사용자가 적어 둔
+     체크와 메모가 통째로 사라지므로, 같은 자리의 사진에 그대로 옮겨 담는다. */
+  const SB=buildShots(DOC);
+  {const prev=SHOTS||[];
+   SB.shots.forEach((sh,i)=>{
+     /* 파일 안의 고유 번호로 짝을 짓는다. 순번으로 짝지으면 사진이 하나만 끼어들어도
+        메모가 옆 사진으로 옮겨 붙는다. 고유 번호가 없는 형식만 순번으로 물러선다. */
+     const p2=(sh.uid&&prev.find(x=>x.uid===sh.uid))||prev[i];
+     if(p2){sh.checks=p2.checks||[];sh.memo=p2.memo||''}
+   });}
+  SHOTS=SB.shots;
+  if(SHOTS.length){
+    const all=IMGBASE.concat(lines($('#imgChecks').value));
+    const byP={};SHOTS.forEach((sh,i)=>{const k=sh.person||'';(byP[k]=byP[k]||[]).push(i)});
+    const unknown=Object.keys(byP).length===1&&Object.keys(byP)[0]==='';
+    h+=`<div class="field"><div class="lbl">눈으로 볼 것</div>
+      <div class="warn">사진·영상 속 내용은 이 도구가 <b>전혀</b> 볼 수 없습니다. 반드시 사람이 직접 확인해 주세요.<br><br>
+        <b>문제가 있는 항목에 체크해 주세요.</b> 예를 들어 타사 제품이 노출됐다면 「타사 제품·로고 없음」에 체크하시면 됩니다.
+        체크하신 항목과 메모만 검수본 파일에 들어갑니다.</div>
+      ${SB.planOnly?`<div class="note" style="margin-bottom:14px">이 파일에는 <b>사진이 들어 있지 않습니다.</b>
+        원고에 적힌 촬영 계획 번호를 읽어 목록을 만들었습니다. 실제 사진이 담긴 원고를 받으시면 그 사진들로 다시 검수해 주세요.</div>`:''}
+      ${unknown&&DOC.type!=='docx'?`<div class="note" style="margin-bottom:14px">사진이 <b>누구 것인지 구분하지 못했습니다.</b>
+        파일에 들어 있는 순서대로 늘어놓았습니다. 위 「본문 지정」에서 작성자를 지정하시거나 AI 검수를 돌리시면 사람별로 나눠 드립니다.</div>`:''}
+      <p class="hint" style="margin:0 0 14px">${SB.how} 만들었습니다 · 사진 ${SHOTS.length}장 · 항목 ${all.length}개</p>`;
+    /* 7명 × 십수 장이면 목록이 백 개를 넘는다. 사람별로 접어 둔다 */
+    const fold=SHOTS.length>24;
+    Object.keys(byP).forEach(k=>{
+      const inner='<div class="checklist">'+byP[k].map(i=>{
+        const sh=SHOTS[i],ck=sh.checks||[];
+        return `<div class="chk" data-s="${i}"><b>${esc(sh.label)}</b>`+
+        all.map(c=>`<label><input type="checkbox" data-t="${esc(c)}"${ck.includes(c)?' checked':''}>${esc(c)}</label>`).join('')+
+        `<textarea placeholder="추가로 요청할 내용" style="min-height:54px;margin-top:11px;font-size:13px">${esc(sh.memo||'')}</textarea></div>`;
+      }).join('')+'</div>';
+      const done=byP[k].filter(i=>(SHOTS[i].checks||[]).length||(SHOTS[i].memo||'').trim()).length;
+      const ttl=`${esc(k||'작성자 미상')} — 사진 ${byP[k].length}장${done?` · 지적 ${done}건`:''}`;
+      h+=fold?`<details class="dict" style="margin-top:16px"${done?' open':''}><summary>${ttl}</summary>${inner}</details>`
+             :(k?`<h4 style="margin:20px 0 10px;font-size:15px;font-weight:700">${ttl}</h4>`:'')+inner;
+    });
+    h+='</div>';
+  }
+  h+=`<div class="field"><div class="btnrow"><button class="btn red" id="mkFile">검수본 파일 내려받기</button></div>
+    <div class="hint" style="margin-top:9px">${DOC.type==='xlsx'?'각 시트 오른쪽에 검수 의견 열이 붙고, 「검수 결과」 시트가 하나 추가됩니다.'
+      :DOC.type==='docx'?'문서 앞에 요약이 붙고, 위반 문구가 있는 문단에 코멘트가 달립니다.'
+      :multi?'사람마다 각자의 수정 요청 칸에 결과가 들어갑니다.':'수정 요청 칸에 기입됩니다. 칸이 없으면 첫 슬라이드에 메모 상자가 생깁니다.'}</div></div>
+    </div></div>`;
+  $('#result').innerHTML=h;
+  $('#mkFile').onclick=makeAnnotated;
+  /* 기계도 AI도 틀리게 잡을 때가 있다. 검수자가 직접 빼면 판정과 검수본에서 함께 제외된다 */
+  if(aiTaskList().length)renderCopyBox();
+}
+
+/* ══ 검수본 ══ */
+function imgLines(who){
+  return imgIssues().filter(x=>!who||x.shot.person===who).map(x=>{
+    const parts=[...x.checks];if(x.memo)parts.push(x.memo);
+    return `[이미지] ${x.shot.label} — ${parts.join(' / ')}`;
+  });
+}
+function summaryLines(items,vd,who){
+  const f=live(items||LAST.items).filter(i=>i.status!=='pass');
+  const L=[`[검수 결과]${who?` ${who}`:''} ${(vd||LAST.v).v.replace('\n',' ')} — ${today()} / ${$('#cWho').value||'검대리'}`];
+  if(!f.length)L.push('지적 사항 없습니다');
+  else f.forEach(i=>L.push(`[티어${i.tier}${i.src==='AI'?'·AI':''}] ${i.label} — ${i.detail}${i.fix?`  ▶ 수정: ${i.fix}`:''}`));
+  const im=imgLines(who);
+  if(im.length){if(!f.length)L.length=1;L.push(...im)}
+  return L;
+}
+async function makeAnnotated(){
+  const b=$('#mkFile');b.disabled=true;b.textContent='만드는 중…';
+  try{const blob=DOC.type==='docx'?await annotateDocx():DOC.type==='xlsx'?await annotateXlsx():await annotatePptx();
+    dl(blob,`${FNAME.replace(/\.(docx|pptx)$/i,'')}_검수_${today().replace(/\./g,'')}.${DOC.type}`);
+  }catch(e){alert('검수본 생성에 실패했습니다 — '+e.message)}
+  b.disabled=false;b.textContent='검수본 파일 내려받기';
+}
+
+async function annotateDocx(){
+  const files=[];
+  let docXml=await readEntry(ZIP,'word/document.xml'),comXml=await readEntry(ZIP,'word/comments.xml');
+  let ctXml=await readEntry(ZIP,'[Content_Types].xml'),relXml=await readEntry(ZIP,'word/_rels/document.xml.rels');
+  const who=esc($('#cWho').value||'검대리'),now=new Date().toISOString().replace(/\.\d+Z$/,'Z');
+  let nid=0;
+  if(comXml){(comXml.match(/w:id="(\d+)"/g)||[]).forEach(m=>nid=Math.max(nid,+m.match(/\d+/)[0]+1))}
+  else{
+    comXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"></w:comments>';
+    if(!/comments\.xml/.test(ctXml))ctXml=ctXml.replace('</Types>','<Override PartName="/word/comments.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml"/></Types>');
+    if(!/comments\.xml/.test(relXml))relXml=relXml.replace('</Relationships>','<Relationship Id="rIdCmt1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="comments.xml"/></Relationships>');
+  }
+  const newComs=[],paras=docXml.match(/<w:p[ >][\s\S]*?<\/w:p>/g)||[];
+  imgIssues().forEach(x=>{
+    const pi=x.shot.para;if(pi===undefined||!paras[pi])return;
+    const id=nid++;const parts=[...x.checks];if(x.memo)parts.push(x.memo);
+    newComs.push(`<w:comment w:id="${id}" w:author="${who}" w:initials="검" w:date="${now}"><w:p><w:r><w:t xml:space="preserve">[이미지] ${esc(x.shot.label)} — ${esc(parts.join(' / '))}</w:t></w:r></w:p></w:comment>`);
+    const hit=paras[pi];
+    docXml=docXml.replace(hit,hit.replace(/(<w:p[ >][^>]*>)/,`$1<w:commentRangeStart w:id="${id}"/>`)
+      .replace(/<\/w:p>$/,`<w:commentRangeEnd w:id="${id}"/><w:r><w:commentReference w:id="${id}"/></w:r></w:p>`));
+  });
+  live(LAST.items).filter(i=>i.status!=='pass'&&/「/.test(i.detail)).forEach(item=>{
+    const q=(item.detail.match(/「([^」]{2,60})」/)||[])[1];if(!q)return;
+    // 인용이 문단 경계를 넘을 수 있으니 조각으로 쪼개 하나씩 시도한다
+    const keys=[q.trim().slice(0,12),...q.split(/[\n\s]+/).map(s=>s.trim()).filter(s=>s.length>=4)]
+      .sort((a,b)=>b.length-a.length);
+    const ptext=p=>dec((p.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g)||[]).map(x=>x.replace(/<[^>]+>/g,'')).join(''));
+    let hit=null;
+    for(const k of keys){hit=paras.find(p=>ptext(p).includes(k));if(hit)break}
+    if(!hit)return;
+    const id=nid++;
+    newComs.push(`<w:comment w:id="${id}" w:author="${who}" w:initials="검" w:date="${now}"><w:p><w:r><w:t xml:space="preserve">[티어${item.tier}] ${esc(item.label)} — ${esc(item.detail)}${item.fix?` ▶ 수정: ${esc(item.fix)}`:''}</w:t></w:r></w:p></w:comment>`);
+    let m=hit.replace(/<w:r>(\s*)<w:t/g,'<w:r>$1<w:rPr><w:highlight w:val="yellow"/></w:rPr><w:t')
+             .replace(/(<w:r>\s*<w:rPr>)(?!<w:highlight)/g,'$1<w:highlight w:val="yellow"/>');
+    const wrapped=m.replace(/(<w:p[ >][^>]*>)/,`$1<w:commentRangeStart w:id="${id}"/>`)
+                   .replace(/<\/w:p>$/,`<w:commentRangeEnd w:id="${id}"/><w:r><w:commentReference w:id="${id}"/></w:r></w:p>`);
+    docXml=docXml.replace(hit,wrapped);
+  });
+  const head=summaryLines().map((t,i)=>`<w:p><w:pPr><w:spacing w:after="0"/></w:pPr><w:r><w:rPr><w:b/>${i===0?'<w:sz w:val="24"/>':''}<w:color w:val="${i===0?'1F3B63':'B8342A'}"/></w:rPr><w:t xml:space="preserve">${esc(t)}</w:t></w:r></w:p>`).join('')
+    +'<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="6" w:color="AAAAAA"/></w:pBdr></w:pPr></w:p>';
+  docXml=docXml.replace(/(<w:body>)/,'$1'+head);
+  comXml=comXml.replace('</w:comments>',newComs.join('')+'</w:comments>');
+  for(const name of Object.keys(ZIP)){
+    let data;
+    if(name==='word/document.xml')data=TE.encode(docXml);
+    else if(name==='word/comments.xml')data=TE.encode(comXml);
+    else if(name==='[Content_Types].xml')data=TE.encode(ctXml);
+    else if(name==='word/_rels/document.xml.rels')data=TE.encode(relXml);
+    else{files.push({name,copy:ZIP[name]});continue}
+    files.push({name,data});
+  }
+  if(!ZIP['word/comments.xml'])files.push({name:'word/comments.xml',data:TE.encode(comXml)});
+  return makeZip(files);
+}
+function subCells(xml){
+  const out=[];
+  (xml.match(/<a:tbl[ >][\s\S]*?<\/a:tbl>/g)||[]).forEach(tb=>{
+    (tb.match(/<a:tr[ >][\s\S]*?<\/a:tr>/g)||[]).forEach(tr=>{
+      const cells=tr.match(/<a:tc[ >][\s\S]*?<\/a:tc>/g)||[];
+      if(cells.some(c=>/수정\s*요청/.test(shapeText(c))))out.push(cells);
+    });
+  });
+  return out;
+}
+function fillCell(xml,cells,ls){
+  const empty=cells.slice(1).find(c=>shapeText(c).length<2)||cells[1];
+  if(!empty)return null;
+  const body=`<a:txBody><a:bodyPr/><a:lstStyle/>${ls.map(t=>`<a:p><a:r><a:rPr lang="ko-KR" sz="1000" dirty="0"><a:solidFill><a:srgbClr val="E03131"/></a:solidFill></a:rPr><a:t>${esc(t)}</a:t></a:r></a:p>`).join('')}</a:txBody>`;
+  return xml.replace(empty,empty.replace(/<a:txBody>[\s\S]*?<\/a:txBody>/,body));
+}
+/* 멘션 셀 끝에 검수 결과를 덧붙인다 — 이미지 수정 요청 칸은 사람 몫이라 건드리지 않는다 */
+function appendToCell(xml,cellText,ls){
+  const cells=xml.match(/<a:tc[ >][\s\S]*?<\/a:tc>/g)||[];
+  const tc=cells.find(c=>shapeText(c)===cellText);
+  if(!tc)return null;
+  const bd=tc.match(/<a:txBody>[\s\S]*?<\/a:txBody>/);
+  if(!bd)return null;
+  const P=t=>`<a:p><a:r><a:rPr lang="ko-KR" sz="1000" b="1" dirty="0"><a:solidFill><a:srgbClr val="E03131"/></a:solidFill></a:rPr><a:t>${esc(t)}</a:t></a:r></a:p>`;
+  const add=['','────────── 검수 의견 ──────────',...ls].map(P).join('');
+  return xml.replace(tc,tc.replace(bd[0],bd[0].replace('</a:txBody>',add+'</a:txBody>')));
+}
+function fillReview(xml,ls){
+  for(const cells of subCells(xml)){
+    const target=cells.slice(1).find(c=>shapeText(c).length<2)||cells[1];
+    if(!target)continue;
+    const bd=target.match(/<a:txBody>[\s\S]*?<\/a:txBody>/);if(!bd)continue;
+    const P=t=>`<a:p><a:r><a:rPr lang="ko-KR" sz="1000" b="1" dirty="0"><a:solidFill><a:srgbClr val="D64545"/></a:solidFill></a:rPr><a:t>${esc(t)}</a:t></a:r></a:p>`;
+    return xml.replace(target,target.replace(bd[0],bd[0].replace('</a:txBody>',ls.map(P).join('')+'</a:txBody>')));
+  }
+  return null;
+}
+/* 파워포인트는 한 슬라이드 안에서 도형 번호가 겹치면 파일이 열리지 않는다.
+   예전에는 임의의 번호를 찍었는데, 확률은 낮아도 겹치면 원고가 통째로 못 쓰게 된다.
+   그 슬라이드에 이미 쓰인 번호를 훑어 그다음 번호를 준다. */
+function nextShapeId(xml){
+  let mx=1;
+  (String(xml).match(/id="(\d+)"/g)||[]).forEach(m=>{const v=+m.match(/\d+/)[0];if(v>mx)mx=v});
+  return mx+1;
+}
+/* 표에 넣을 자리가 없을 때 슬라이드 위에 메모 상자를 얹는다 */
+function appendBox(xml,ls){
+  if(!/<\/p:spTree>/.test(xml))return null;
+  const body=ls.map(t=>`<a:p><a:r><a:rPr lang="ko-KR" sz="1100" dirty="0"><a:solidFill><a:srgbClr val="B8342A"/></a:solidFill></a:rPr><a:t>${esc(t)}</a:t></a:r></a:p>`).join('');
+  return xml.replace('</p:spTree>',`<p:sp><p:nvSpPr><p:cNvPr id="${nextShapeId(xml)}" name="검수 메모"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>
+<p:spPr><a:xfrm><a:off x="304800" y="304800"/><a:ext cx="5200000" cy="2600000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+<a:solidFill><a:srgbClr val="FFF7F6"/></a:solidFill><a:ln w="12700"><a:solidFill><a:srgbClr val="B8342A"/></a:solidFill></a:ln></p:spPr>
+<p:txBody><a:bodyPr wrap="square"><a:normAutofit/></a:bodyPr><a:lstStyle/>${body}</p:txBody></p:sp></p:spTree>`);
+}
+async function annotatePptx(){
+  const men=DOC.blocks.filter(b=>b.role==='mention');
+  const imgBySlide={};
+  imgIssues().forEach(x=>{
+    const sl=x.shot.slide;if(!sl)return;
+    const parts=[...x.checks];if(x.memo)parts.push(x.memo);
+    (imgBySlide[sl]=imgBySlide[sl]||[]).push(`[${x.shot.label}] ${parts.join(' / ')}`);
+  });
+  if(men.length){
+    const files=[],edited={},done={};
+    const ns=Object.keys(ZIP).filter(k=>/^ppt\/slides\/slide\d+\.xml$/.test(k)).sort((a,b)=>(+a.match(/\d+/)[0])-(+b.match(/\d+/)[0]));
+    for(const n of ns){
+      let xml=await readEntry(ZIP,n);
+      if(imgBySlide[n]){const r=fillReview(xml,imgBySlide[n]);if(r)xml=r}
+      const mine=men.filter(b=>b.slide===n);
+      for(const b of mine){
+        const key=b.person||'__solo';
+        if(done[key])continue;
+        /* 작성자를 못 나눈 칸은 첫 그룹(전체 공통)에 붙인다.
+           예전에는 짝을 못 찾으면 건너뛰어서 아무것도 안 적히는 일이 있었다 */
+        const g=(b.person&&LAST.groups.length>1
+          ? LAST.groups.find(x=>x.name===b.person)
+          : LAST.groups[0])||LAST.groups[0];
+        if(!g)continue;
+        const r=appendToCell(xml,b.text,summaryLines(g.items,g.v,g.name));
+        if(r){xml=r;done[key]=1}
+      }
+      edited[n]=xml;
+    }
+    if(Object.keys(done).length){
+      for(const name of Object.keys(ZIP))files.push(edited[name]?{name,data:TE.encode(edited[name])}:{name,copy:ZIP[name]});
+      return makeZip(files);
+    }
+  }
+  if(LAST.groups.length>1){
+    const files=[],edited={},done={};
+    const ns=Object.keys(ZIP).filter(k=>/^ppt\/slides\/slide\d+\.xml$/.test(k)).sort((a,b)=>(+a.match(/\d+/)[0])-(+b.match(/\d+/)[0]));
+    for(const n of ns){
+      let xml=await readEntry(ZIP,n);
+      const who=DOC.slidePerson?DOC.slidePerson[n]:null;
+      if(who&&!done[who]){
+        const g=LAST.groups.find(x=>x.name===who);
+        if(g)for(const cells of subCells(xml)){const r=fillCell(xml,cells,summaryLines(g.items,g.v,g.name));if(r){xml=r;done[who]=1;break}}
+      }
+      edited[n]=xml;
+    }
+    /* AI가 나눈 사람은 원고 칸에 이름표가 없다. 슬라이드 글에서 이름을 찾아 그 장에 적는다.
+       예전에는 이 경우가 통째로 빠져서, AI가 사람을 구분해도 검수본에는 아무것도 안 남았다. */
+    const aiG=LAST.groups.filter(g=>g.aiOnly&&!done[g.name]);
+    if(aiG.length){
+      for(const n2 of ns){
+        const xml0=edited[n2]!==undefined?edited[n2]:await readEntry(ZIP,n2);
+        let xml=xml0;
+        for(const g of aiG){
+          if(done[g.name])continue;
+          const nm=String(g.name).replace(/\s/g,'').toLowerCase();
+          if(!norm(shapeText(xml)).toLowerCase().includes(nm))continue;
+          for(const cells of subCells(xml)){
+            const r2=fillCell(xml,cells,summaryLines(g.items,g.v,g.name));
+            if(r2){xml=r2;done[g.name]=1;break}
+          }
+          if(!done[g.name]){
+            const r3=appendBox(xml,summaryLines(g.items,g.v,g.name));
+            if(r3){xml=r3;done[g.name]=1}
+          }
+        }
+        if(xml!==xml0)edited[n2]=xml;
+      }
+    }
+    /* 한 칸도 못 채웠으면 여기서 끝내면 안 된다.
+       예전에는 무조건 돌려줘서 검수 내용이 하나도 없는 파일이 나갔다. */
+    if(Object.keys(done).length){
+      for(const name of Object.keys(ZIP))files.push(edited[name]?{name,data:TE.encode(edited[name])}:{name,copy:ZIP[name]});
+      return makeZip(files);
+    }
+  }
+  const files=[],lines=summaryLines(),edited={};
+  const names=Object.keys(ZIP).filter(k=>/^ppt\/slides\/slide\d+\.xml$/.test(k)).sort((a,b)=>(+a.match(/\d+/)[0])-(+b.match(/\d+/)[0]));
+  let placed=false;
+  for(const n of names){
+    let xml=await readEntry(ZIP,n);
+    if(!placed){
+      const rows=xml.match(/<a:tr[ >][\s\S]*?<\/a:tr>/g)||[];
+      const target=rows.find(r=>/수정\s*요청/.test(shapeText(r)));
+      if(target){
+        const cells=target.match(/<a:tc[ >][\s\S]*?<\/a:tc>/g)||[];
+        const empty=cells.slice(1).find(c=>shapeText(c).length<2)||cells[1];
+        if(empty){
+          const body=`<a:txBody><a:bodyPr/><a:lstStyle/>${lines.map(t=>`<a:p><a:r><a:rPr lang="ko-KR" sz="1000" dirty="0"><a:solidFill><a:srgbClr val="B8342A"/></a:solidFill></a:rPr><a:t>${esc(t)}</a:t></a:r></a:p>`).join('')}</a:txBody>`;
+          xml=xml.replace(empty,empty.replace(/<a:txBody>[\s\S]*?<\/a:txBody>/,body));
+          placed=true;
+        }
+      }
+    }
+    edited[n]=xml;
+  }
+  if(!placed&&names.length){
+    const n=names[0];
+    edited[n]=edited[n].replace('</p:spTree>',`<p:sp><p:nvSpPr><p:cNvPr id="${nextShapeId(edited[n])}" name="검수 메모"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>
+<p:spPr><a:xfrm><a:off x="304800" y="304800"/><a:ext cx="5200000" cy="2600000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+<a:solidFill><a:srgbClr val="FFF7F6"/></a:solidFill><a:ln w="12700"><a:solidFill><a:srgbClr val="B8342A"/></a:solidFill></a:ln></p:spPr>
+<p:txBody><a:bodyPr wrap="square"><a:normAutofit/></a:bodyPr><a:lstStyle/>${lines.map(t=>`<a:p><a:r><a:rPr lang="ko-KR" sz="1100" dirty="0"><a:solidFill><a:srgbClr val="B8342A"/></a:solidFill></a:rPr><a:t>${esc(t)}</a:t></a:r></a:p>`).join('')}</p:txBody></p:sp></p:spTree>`);
+  }
+  for(const name of Object.keys(ZIP))files.push(edited[name]?{name,data:TE.encode(edited[name])}:{name,copy:ZIP[name]});
+  return makeZip(files);
+}
+
+/* ══ 이력 ══ */
+try{hist=JSON.parse(S.get('v4_hist')||'[]')}catch(e){hist=[]}
+function pushHist(){
+  const LV=live(LAST.items);
+  hist.unshift({at:new Date().toLocaleString('ko-KR',{hour12:false}),file:FNAME,camp:$('#cName').value||'',
+    plat:(CURPLAT&&CURPLAT.name)||'',
+    t1:LV.filter(i=>i.tier===1&&i.status==='fail').length,t2:LV.filter(i=>i.tier===2&&i.status==='fail').length,
+    ai:LV.filter(i=>i.src==='AI').length,v:LAST.v.v.replace('\n',' '),min:LAST.mins.toFixed(1)});
+  S.set('v4_hist',JSON.stringify(hist.slice(0,500)));
+}
+function drawHist(){
+  if(!hist.length)return $('#histBox').innerHTML='<div class="empty">아직 없습니다. 검수를 한 번 실행하시면 여기에 쌓입니다.</div>';
+  const tot=hist.length,avg=(hist.reduce((s,h)=>s+ +h.min,0)/tot).toFixed(1);
+  $('#histBox').innerHTML=`<div class="stat plain" style="margin-bottom:18px">
+    <div><div class="k">누적 검수</div><div class="v">${tot}</div></div>
+    <div><div class="k">평균 소요</div><div class="v">${avg}<span style="font-size:13px;font-family:var(--sans)">분</span></div></div>
+    <div><div class="k">수정 요청률</div><div class="v">${Math.round(hist.filter(h=>h.v!=='승인').length/tot*100)}<span style="font-size:13px;font-family:var(--sans)">%</span></div></div></div>
+  <table class="hist"><tr><th>검수일시</th><th>파일</th><th>플랫폼</th><th>T1</th><th>T2</th><th>AI</th><th>판정</th><th>소요</th></tr>
+  ${hist.map(h=>`<tr><td class="n">${h.at}</td><td>${esc(h.file)}</td><td>${h.plat}</td>
+  <td class="n" style="color:${h.t1?'var(--red)':''}">${h.t1}</td><td class="n" style="color:${h.t2?'var(--amber)':''}">${h.t2}</td>
+  <td class="n">${h.ai||0}</td><td>${h.v}</td><td class="n">${h.min}분</td></tr>`).join('')}</table>`;
+}
+$('#csvOut').onclick=()=>{
+  if(!hist.length)return alert('내보낼 이력이 없습니다.');
+  const head=['검수일시','파일명','캠페인','플랫폼','티어1','티어2','AI지적','판정','소요분'];
+  const csv='\uFEFF'+[head,...hist.map(h=>[h.at,h.file,h.camp,h.plat,h.t1,h.t2,h.ai||0,h.v,h.min])]
+    .map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  dl(new Blob([csv],{type:'text/csv'}),`검수이력_${today().replace(/\./g,'')}.csv`);
+};
+$('#csvClear').onclick=()=>{if(confirm('이력을 전부 지웁니다. 되돌릴 수 없습니다.')){hist=[];S.set('v4_hist','[]');drawHist()}};
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+
+/* ══ 설정 색인 ══ */
+function buildRail(){
+  const sheets=[...$('#p-set').querySelectorAll('.sheet')];
+  $('#rail').innerHTML=sheets.map((sh,i)=>{
+    const id='sec'+i;sh.id=id;
+    const n=sh.querySelector('.snum').textContent.trim();
+    const t=sh.querySelector('.stitle h2').textContent.replace('필수','').trim();
+    return `<a href="#${id}"><span>${n}</span>${esc(t)}</a>`}).join('');
+}
+
+/* ══ 시작 ══ */
+/* 이름과 버전은 rules.js 의 APPNAME · APPVER 한 곳에서만 정합니다.
+   화면에 박힌 글자는 스크립트가 못 돌 때를 위한 예비값입니다. */
+$$('[data-app]').forEach(el=>el.textContent=APPNAME);
+$$('[data-ver]').forEach(el=>el.textContent=APPVER);
+bindBlocks();bindResult();buildRail();loadBase();loadPlatforms();drawBase();drawProducts();drawGroups();drawFuncs();drawRules();drawMissions();drawPlatforms();drawAI();fillDicts();fillPlatSelect();
+DICTKEYS.forEach(k=>{const el=$('#'+k+'Dict');if(el)el.oninput=syncDicts});
+if($('#mType'))$('#mType').oninput=syncPick;
+/* 캠페인 설정 입력칸은 값이 바뀔 때마다 자동 저장한다 */
+FIELDS.forEach(f=>{const el=$('#'+f);if(el)el.addEventListener('input',saveAll)});
+if(loadAll())redrawAll();
+try{aiCfg=Object.assign(aiCfg,JSON.parse(S.get('v4_ai')||'{}'))}
+catch(e){
+  /* 저장된 값이 깨졌으면 기본값으로 시작하되, 왜 키가 사라졌는지는 알려 드린다 */
+  S.set('v4_ai','');
+  setTimeout(()=>alert('저장해 두신 AI 설정을 읽지 못해 처음 상태로 시작합니다.\n\nAI 설정 탭에서 키를 다시 넣어 주세요.'),0);
+}
+if($('#aiNoSave'))$('#aiNoSave').checked=S.get('v4_aiNoSave')==='1';
+$('#aiProv').value=aiCfg.prov;$('#aiModel').value=aiCfg.model||'';$('#aiUrl').value=aiCfg.url||'';$('#aiKey').value=aiCfg.key||'';
+syncProv();
+aiMode=S.get('v4_aimode')||'key';
+$$('#aiMode button').forEach(x=>x.classList.toggle('on',x.dataset.m===aiMode));
+$('#aiKeyBox').style.display=aiMode==='key'?'':'none';
+$('#copyWarn').style.display=aiMode==='copy'?'':'none';
+syncGX();
+
+</script>
+<script>
+/* 색인 현재 위치 표시 */
+(function(){
+  const rail=document.getElementById('rail');if(!rail)return;
+  const links=[...rail.querySelectorAll('a')];if(!links.length)return;
+  const secs=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  if(!secs.length)return;
+  const io=new IntersectionObserver(es=>{
+    es.forEach(e=>{
+      if(!e.isIntersecting)return;
+      const i=secs.indexOf(e.target);
+      links.forEach((a,n)=>a.classList.toggle('cur',n===i));
+    });
+  },{rootMargin:'-84px 0px -70% 0px',threshold:0});
+  secs.forEach(s=>io.observe(s));
+})();
+</script>
+</body>
+</html>

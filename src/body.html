@@ -1,0 +1,366 @@
+<body>
+
+<div class="brandbar">
+  <svg viewBox="0 0 44 30" aria-hidden="true"><path d="M15 4 L22 10 L29 4 L27 2 L22 6 L17 2 Z"/><path d="M20 10 L24 10 L23.2 13 L20.8 13 Z"/><path d="M20.8 13 L23.2 13 L25 23 L22 27 L19 23 Z"/></svg>
+  <b data-app>검대리</b><i data-ver>v1.0.2</i>
+</div>
+
+<header class="top"><div class="topin">
+  <nav>
+    <button data-p="set" class="on">설정</button>
+    <button data-p="ai">AI 설정</button>
+    <button data-p="rev">검수</button>
+    <button data-p="his">이력</button>
+  </nav>
+</div></header>
+
+<main class="wrap">
+<section class="panel on" id="p-set"><div class="withrail"><nav class="rail" id="rail"></nav><div>
+
+  <div class="sheet"><div class="shead"><span class="snum">01</span><div class="stitle">
+    <h2>설정 저장</h2><p>아래에서 만드신 검수 기준을 파일로 남기고, 다시 불러오는 곳입니다. <b>가이드 파일과는 다릅니다.</b></p>
+  </div></div><div class="sbody" style="padding:20px 30px">
+    <p class="why" style="margin-top:0">여기서 정하신 설정은 <b>이 브라우저에 자동으로 저장됩니다.</b> 창을 닫았다 다시 여셔도 그대로 있습니다.<br>
+      다만 브라우저 기록을 지우거나 다른 PC에서 여시면 사라집니다. <b>중요한 캠페인은 파일로 한 번 저장해 두세요.</b></p>
+    <div class="btnrow">
+      <button class="btn ghost sm" id="pfSave">설정 파일로 저장</button>
+      <button class="btn ghost sm" id="pfLoad">설정 파일 불러오기</button>
+      <button class="btn ghost sm" id="pfReset">새 캠페인 시작</button>
+    </div>
+    <div class="hint"><b>설정 파일로 저장</b> — <code>.json</code> 파일 하나가 내려받아집니다. 이 도구에서 내보낸 파일만 다시 불러올 수 있습니다.<br>
+      <b>설정 파일 불러오기</b> — 팀원이 만든 설정을 그대로 쓰실 수 있습니다. 모두 같은 기준으로 검수하게 됩니다.<br>
+      <b>새 캠페인 시작</b> — 지금 설정을 전부 지우고 처음 상태로 되돌립니다. 이전 캠페인 값이 섞이지 않게 할 때 쓰세요.</div>
+  </div></div>
+
+  <div class="sheet"><div class="shead"><span class="snum">02</span><div class="stitle">
+    <h2>가이드 불러오기</h2><p>가이드 파일을 읽어 아래 설정을 제안합니다. 체크하신 것만 반영되고 기존 값을 덮어쓰지 않습니다.</p>
+  </div></div><div class="sbody">
+    <input type="file" id="mGuide" accept=".docx,.pptx,.xlsx">
+    <div class="hint" id="mGuideOut">워드 · 파워포인트 · 엑셀을 읽습니다. 올려두신 가이드는 AI 검수 프롬프트에도 함께 들어갑니다.</div>
+    <div class="btnrow" style="margin:20px 0 0">
+      <button class="btn ghost sm" id="gxRun" disabled>가이드에서 읽기</button>
+      <button class="btn ghost sm" id="gxAI" disabled>AI로 보완하기</button>
+      <button class="btn ghost sm" id="gxCopy" disabled>가이드 분석 프롬프트 복사</button>
+      <span class="hint" id="gxWhy" style="margin:0"></span>
+    </div>
+    <div class="warn">문서 구조를 기계적으로 읽는 방식이라 가이드 양식에 따라 <b>잘못 뽑히거나 빠질 수 있습니다.</b>
+      적용 전에 반드시 가이드 원문과 대조해 주세요. 이 도구가 뽑은 값의 정확성은 보장되지 않습니다.</div>
+    <div id="gxBox"></div>
+  </div></div>
+
+  <div class="sheet"><div class="shead"><span class="snum">03</span><div class="stitle">
+    <h2>기본 검수 항목</h2><p>어느 캠페인에나 들어가는 항목이라 도구가 기본으로 제공합니다. 필요 없으면 꺼 두셔도 됩니다.</p>
+  </div></div><div class="sbody"><div id="baseBox"></div></div></div>
+
+  <div class="sheet"><div class="shead"><span class="snum">04</span><div class="stitle">
+    <h2>캠페인 설정</h2><p>캠페인마다 직접 채우는 항목입니다. 한 번 만들어 프로필로 내보내면 계속 씁니다.</p>
+  </div></div><div class="sbody">
+
+    <div class="field"><div class="row col2">
+      <div><label class="f">캠페인명</label><input type="text" id="cName" placeholder="예) 2026 래온셀 배리어 크림 체험단"></div>
+      <div><label class="f">검수자 이름</label>
+        <p class="why">검수본 파일의 코멘트 작성자로 기록됩니다. 누가 언제 봤는지 남기기 위한 항목입니다.</p>
+        <input type="text" id="cWho" placeholder="예) 검대리" value="검대리"></div>
+    </div></div>
+
+    <div class="field"><span class="lbl">제품명 사전</span>
+      <p class="why">정식 표기만 넣으시면 대소문자·띄어쓰기·철자 뒤바뀜을 자동으로 잡습니다. <b>래온셀 배리어 크림</b> 한 줄이면 래온셀배리어크림 · RAEONCELL 배리어 크림 · 래온셀 베리어 크림이 모두 걸립니다.</p>
+      <div id="pnBox"></div>
+      <button class="btn ghost sm mt14" id="pnAdd">제품명 추가</button>
+    </div>
+
+    <div class="field"><span class="lbl">정식 명칭</span>
+      <p class="why">기능명처럼 <b>붙여 써야 하는 브랜드 용어</b>를 적어 주세요. AI가 이걸 맞춤법 오류로 잡지 않게 막아 줍니다.
+        제품명 사전과 필수 고지 문구에 넣으신 이름은 자동으로 포함되니, 여기에는 <b>거기에 없는 것만</b> 추가하시면 됩니다.</p>
+      <textarea id="properNames" placeholder="예) 딥배리어&#10;트리플히알론&#10;시카리페어"></textarea>
+      <div class="hint">한 줄에 하나씩 적어 주세요.</div>
+    </div>
+
+    <div class="field"><span class="lbl">필수 해시태그</span>
+      <div class="row">
+        <div><label class="f">모든 콘텐츠에 반드시 들어갈 태그</label>
+          <p class="why">가이드의 공통 해시태그를 그대로 붙여넣으세요. 하나라도 빠지면 티어 2로 잡습니다.</p>
+          <textarea id="hReq" placeholder="예) #래온셀 #래온셀배리어크림 #딥배리어세럼"></textarea>
+          <div class="hint">공백·줄바꿈·<b>#</b> 어느 쪽으로 구분하셔도 됩니다.</div></div>
+      </div>
+      <label class="f mt12">택1 그룹</label>
+      <p class="why">"이 중 최소 몇 개"만 있으면 되는 경우에 씁니다. 제품군에 따라 태그가 갈리거나, 특정 크리에이터만 두 개 다 써야 하는 경우입니다.</p>
+      <div id="hgBox"></div>
+      <button class="btn ghost sm mt14" id="hgAdd">그룹 추가</button>
+    </div>
+
+    <div class="field"><span class="lbl">상단 필수 문구</span>
+      <div class="row col2">
+        <div><label class="f">본문 앞부분에 반드시 나와야 할 문구</label>
+          <p class="why">콘텐츠 초반에 특정 문구를 반드시 넣어 달라는 요청이 있을 때 씁니다. 예를 들어 "초반에 제품명을 강조해 달라" 같은 경우입니다.
+            <b>광고 고지와는 다른 항목입니다.</b> 고지 문구는 아래 광고 고지 칸에 넣어 주세요. 비워 두시면 검사하지 않습니다.</p>
+          <input type="text" id="leadText" placeholder="예) 래온셀 배리어 크림"></div>
+        <div><label class="f">확인 범위</label>
+          <p class="why">본문 앞에서 몇 글자까지 볼지 정합니다. 블로그는 400~600자, 인스타는 200자 정도가 적당합니다.</p>
+          <input type="number" id="leadRange" placeholder="예) 400"></div>
+      </div>
+    </div>
+
+    <div class="field"><span class="lbl">필수 고지 문구</span>
+      <p class="why"><b>원고에 특정 기능이나 효과가 나오면, 정해진 문구가 반드시 따라붙어야 하는 캠페인</b>에서 씁니다.
+        업종에 따라 유의 문구 · 역자막 · 주석 · 단서 조항 등으로 부릅니다. 이런 경우입니다.</p>
+      <ul class="why" style="margin:0 0 4px 18px;padding:0">
+        <li><b>법정 사전심의 대상</b> — 의료기기, 의약품, 건강기능식품처럼 광고 문안을 미리 심의받는 품목</li>
+        <li><b>자율심의 대상</b> — 화장품 기능성 표시, 금융상품 설명, 주류 등 협회·기관 자율 규약이 걸리는 품목</li>
+        <li><b>법령상 의무 고지</b> — 「개인차가 있을 수 있습니다」, 「시험 조건에 따라 다를 수 있습니다」처럼 실증 근거에 붙는 단서</li>
+        <li><b>브랜드 가이드라인상 필수</b> — 특정 기능명을 쓰면 반드시 같이 넣기로 클라이언트와 합의한 문구</li>
+      </ul>
+      <p class="why"><b>해당 없으면 이 항목을 통째로 건너뛰셔도 됩니다.</b> 아무것도 등록하지 않으시면 관련 검사가 자동으로 꺼집니다.</p>
+      <details class="dict"><summary>필수 고지 문구 설정하기</summary>
+      <p class="why" style="margin-top:14px"><b>이렇게 동작합니다.</b><br>
+        ① 원고 전체에서 등록하신 <b>기능명</b>을 찾습니다. →
+        ② 기능명이 나왔으면, 짝지어 둔 <b>고지 문구</b>가 원고에 있는지 확인합니다. →
+        ③ 없으면 위반으로 잡습니다. <b>기능명이 아예 안 나왔으면 검사하지 않습니다.</b><br>
+        그래서 기능명을 적어 두셔야 합니다. 고지 문구에 기능명이 안 적혀 있어도 상관없습니다.
+        <b>기능명은 「언제 이 문구가 필요한지」를 판단하는 방아쇠일 뿐</b>이고, 고지 문구 본문에 들어가는 게 아닙니다.<br><br>
+        기계는 <b>있는지 · 중복인지 · 모양이 맞는지</b>를 보고, 내용이 기능과 맞는지는 <b>AI가 봅니다.</b></p>
+      <div class="row col2">
+        <div><label class="f">필요한 고지 문구</label>
+          <p class="why">기능명을 언급하면 따라와야 하는 문구를 쌍으로 등록합니다. 원고에 그 기능이 안 나오면 검사도 하지 않습니다.</p>
+          <div id="fnBox"></div>
+          <button class="btn ghost sm mt14" id="fnAdd">고지 문구 추가</button></div>
+        <div><label class="f">넣으면 안 되는 고지 문구</label>
+          <p class="why">캠페인을 돌리다 보면 가이드에 있던 문구가 빠지거나 실증 자료가 없어 못 쓰게 되는 경우가 생깁니다.
+            <b>제외 대상이 정해질 때마다 여기에 추가해 주세요.</b> 가이드에서는 자동으로 뽑지 않습니다.</p>
+          <textarea id="banSub" placeholder="예) * 임상시험에서 피부 재생률 98% 개선이 확인되었습니다.&#10;* 민감성 피부도 부작용 없이 사용 가능합니다." style="min-height:124px"></textarea>
+          <div class="hint">한 줄에 하나씩. 앞 15자만 일치해도 잡으므로 일부만 베껴 온 경우도 걸립니다.</div></div>
+      </div>
+      <div class="hint" style="margin-top:16px"><b>표기 방식은 따로 설정하지 않으셔도 됩니다.</b>
+        <code>[기능명]</code> <code>(기능명)</code> <code>「기능명」</code> 같은 괄호와 <code>*</code> <code>※</code> <code>·</code> <code>-</code> 같은 기호를 모두 알아서 읽습니다.
+        기능 이름 없이 문구만 적힌 원고도, 기호 없이 문장으로만 적은 원고도 <b>위에 등록하신 사전을 기준으로 판정</b>하므로 그대로 검사됩니다.</div>
+      </details>
+    </div>
+
+    <div class="field"><span class="lbl">표 머리말 사전</span>
+      <p class="why">원고가 표로 되어 있을 때, <b>어느 열이 무슨 내용인지</b>를 머리말 단어로 알아냅니다.
+        회사마다 부르는 이름이 달라서 직접 정하실 수 있게 했습니다. 한 줄에 하나씩, 쉼표로 여러 개를 적으시면 됩니다.</p>
+      <div class="row col2">
+        <div><label class="f">본문이 들어 있는 열</label>
+          <input type="text" id="hdrMention" value="멘션, 캡션, 본문 내용, 원고 내용, 대본, 나레이션"></div>
+        <div><label class="f">고지 문구가 들어 있는 열</label>
+          <input type="text" id="hdrSub" value="역자막, 유의 문구, 필수 고지 문구, 고지 문구, 자막"></div>
+      </div>
+      <div class="row col2">
+        <div><label class="f">검수자가 적는 열</label>
+          <input type="text" id="hdrReview" value="수정 요청, 피드백, 검수 내용"></div>
+        <div><label class="f">이미지·씬 번호가 들어 있는 열</label>
+          <input type="text" id="hdrIdx" value="이미지 순서, 이미지, 씬, 컷, 화면 구성"></div>
+      </div>
+      <div class="row col2">
+        <div><label class="f">작성자 이름이 들어 있는 열</label>
+          <input type="text" id="hdrPerson" value="인플루언서, 크리에이터, 계정, 작성자, 담당자, 채널명">
+          <div class="hint">여러 명의 원고가 한 파일에 있을 때 <b>누구 것인지 나누는 기준</b>이 됩니다.</div></div>
+        <div></div>
+      </div>
+    </div>
+
+    <div class="field"><span class="lbl">이미지 확인 항목</span>
+      <div class="row"><div><label class="f">제품 특성상 추가로 볼 것</label>
+        <p class="why">공통 4개 항목(타사 노출·제품 왜곡·초점·구도)은 기본으로 깔립니다. 여기에는 <b>이 제품이라서 봐야 하는 것</b>만 적어 주세요.
+          제품이 나오지 않는 캠페인이라면 <b>03 기본 검수 항목</b>에서 꺼 두셔도 됩니다.</p>
+        <textarea id="imgChecks" placeholder="예) 사용 전후 비교 컷으로 오인될 구도가 아닌지&#10;과도한 보정으로 피부 표현이 왜곡되지 않았는지&#10;제품 라벨과 용기 표기가 가려지지 않았는지"></textarea>
+        <div class="hint">한 줄에 하나씩. 이미지마다 이 항목이 체크박스로 붙습니다.</div></div></div>
+    </div>
+
+    <div class="field"><span class="lbl">플랫폼</span>
+      <p class="why">검수 기준이 되는 플랫폼을 직접 정의합니다. <b>파일 형식과는 아무 관계가 없습니다.</b>
+        블로그 원고를 파워포인트로 쓰시든 영상 기획안을 엑셀로 쓰시든 상관없습니다.
+        검수하실 때 여기 등록하신 것 중에서 직접 고르시게 됩니다.</p>
+      <div id="plBox"></div>
+      <button class="btn ghost sm mt14" id="plAdd">플랫폼 추가</button>
+      <p class="why"><b>별칭</b>은 가이드에서 이 플랫폼 이야기를 찾을 때 쓰는 다른 이름입니다. 쉼표로 구분해 주세요.<br>
+        <b>광고 고지</b>는 본문 앞에서 정하신 글자 수 안에 문구가 있는지만 기계가 확인합니다.
+        해시태그로 쓸지 문장으로 쓸지 같은 <b>표기 방식의 적절성은 AI가 판단</b>합니다. 플랫폼마다 관행이 다르기 때문입니다.</p>
+    </div>
+
+    <div class="field"><span class="lbl">사전</span>
+      <p class="why">기계가 원고에서 찾아낼 단어 목록입니다. <b>03 기본 검수 항목</b>에서 해당 항목을 꺼 두시면 검사하지 않습니다.</p>
+      <div class="row col2">
+        <div><label class="f">타 브랜드 언급</label>
+          <p class="why">원고에 나오면 안 되는 경쟁사·타 브랜드 이름입니다. 하나라도 걸리면 <b>티어 1(게재 불가)</b>로 잡습니다.
+            <b>기본값은 비어 있습니다.</b> 업종마다 경쟁 구도가 완전히 달라서 미리 채워 두면 오탐만 납니다.</p>
+          <textarea id="rivalDict" placeholder="예) 비오나르&#10;BIONARR&#10;셀피오" style="min-height:150px;font-family:var(--mono);font-size:12.5px"></textarea>
+          <div class="hint">한 줄에 하나씩. 영문 표기가 따로 있으면 그것도 각각 넣어 주세요.</div></div>
+        <div><label class="f">최상급 · 과장 표현</label>
+          <p class="why">법무에서 문제 삼는 단정적 표현입니다. <b>티어 2(수정 필요)</b>로 잡습니다.
+            업종마다 기준이 달라 일반적인 것만 넣어 두었습니다. <b>이 업종에서 쓰면 안 되는 표현을 추가</b>하시고,
+            일상적으로 쓰는 단어는 빼두시면 오탐이 줄어듭니다.</p>
+          <textarea id="hypeDict" style="min-height:150px;font-family:var(--mono);font-size:12.5px"></textarea>
+          <div class="hint">한 줄에 하나씩.</div></div>
+      </div>
+    </div>
+
+    <div class="field"><span class="lbl">참고 자료</span>
+      <div class="row"><div><label class="f">사실 확인에 쓸 자료</label>
+        <p class="why">공식 상세페이지, 제품 설명서, 시험 성적서 요약처럼 <b>맞는 내용의 근거</b>가 되는 텍스트를 넣어 두시면 AI가 판단할 때 근거로 씁니다.
+          없으면 사실인 내용도 추측으로 지적할 수 있습니다.</p>
+        <textarea id="refText" placeholder="예) 래온셀 배리어 크림은 세라마이드 3종을 배합한 보습 크림으로, 자사 시험 기준 12시간 수분 지속을 확인했습니다"></textarea></div></div>
+    </div>
+
+    <div class="field"><span class="lbl">미션 프리셋</span>
+      <p class="why">가이드에 콘텐츠별 주제가 정해져 있으면 등록해 두세요. 검수하실 때 골라 쓰시면 매번 다시 입력하지 않으셔도 됩니다.
+        같은 미션이 이미 있으면 덮어쓰지 않고 <b>내용이 더 자세한 쪽으로 합칩니다.</b></p>
+      <p class="why">가이드 한 부에 <b>플랫폼이 여럿 섞여 있고 플랫폼마다 회차 수가 다른 경우</b>가 많습니다.
+        유튜브는 단발성인데 블로그·인스타는 3회차인 식입니다. 또 <b>인플루언서 유형에 따라 담을 내용이 갈리기도</b> 합니다.
+        그래서 <b>플랫폼 · 유형 · 회차</b> 세 가지로 나눠 적습니다.<br>
+        해당 없는 칸은 비워 두시면 <b>전체 공통</b>으로 처리합니다. 축을 안 쓰는 캠페인은 회차만 적으시면 되고,
+        <b>회차를 나누지 않는 단발성이면 이 항목을 통째로 비워 두셔도 됩니다.</b></p>
+      <div id="rdBox"></div>
+      <button class="btn ghost sm mt14" id="rdAdd">미션 추가</button>
+    </div>
+
+    <div class="field"><span class="lbl">직접 만드는 규칙</span>
+      <p class="why">위 항목으로 표현이 안 되는 것만 넣으시면 됩니다. 예를 들어 "용량은 mL로 표기" 같은 캠페인 고유 규칙입니다.</p>
+      <div style="display:flex;gap:11px;align-items:flex-end;flex-wrap:wrap;margin:18px 0">
+        <div style="flex:1 1 250px"><label class="f">종류</label>
+          <select id="rType">
+            <option value="must">포함 필수 — 이 문구가 반드시 있어야 합니다</option>
+            <option value="ban">포함 금지 — 이 문구가 있으면 안 됩니다</option>
+            <option value="replace">치환 권장 — 잘못된 표기를 바른 표기로</option>
+            <option value="cond">조건부 필수 — A가 나오면 B도 있어야 합니다</option>
+          </select></div>
+        <div style="flex:0 0 140px"><label class="f">티어</label>
+          <select id="rTier"><option value="1">1 · 게재 불가</option><option value="2" selected>2 · 수정 필요</option><option value="3">3 · 권고</option></select></div>
+        <button class="btn sm" id="rAdd">추가</button>
+      </div>
+      <div id="rBox"></div>
+    </div>
+  </div></div>
+
+  <div class="sheet"><div class="shead"><span class="snum">05</span><div class="stitle">
+    <h2>이번 콘텐츠 정보</h2><p>콘텐츠마다 바뀌는 항목입니다. 비워 두셔도 검수는 돌아가지만, 주제를 넣으셔야 "가이드대로 썼는지"를 볼 수 있습니다.<br>
+      <b>회차를 나누지 않는 단발성 캠페인이라면 미션 선택은 그냥 두고 주제만 적으시면 됩니다.</b></p>
+  </div></div><div class="sbody">
+    <div class="field">
+      <div class="row col2">
+        <div><label class="f">인플루언서 유형</label>
+          <p class="why">유형에 따라 담을 내용이 갈리는 가이드에서만 씁니다. 아니면 비워 두세요.</p>
+          <input type="text" id="mType" placeholder="예) 펫"></div>
+        <div><label class="f">미션 선택</label>
+          <p class="why">위 프리셋 중 <b>지금 고른 플랫폼과 유형에 맞는 것만</b> 보여 드립니다.</p>
+          <select id="rdPick"><option value="">직접 입력</option></select>
+          <div class="hint" id="rdCount"></div></div>
+      </div>
+      <div class="row">
+        <div><label class="f">회차 주제 <span class="src ai">AI</span></label>
+          <p class="why">"제대로 소구했는가"를 AI가 이 기준으로 봅니다. 가이드의 주제 문장을 그대로 옮기시면 됩니다.
+            <b>비워 두시면 이 항목만 건너뛰고</b> 나머지 검수는 그대로 돌아갑니다.</p>
+          <textarea id="mTopic" placeholder="예) 1주차 첫인상과 제형 소개 — 개봉부터 첫 사용까지를 담되, 본인 피부 고민과 연결해서 써야 함"></textarea></div>
+      </div>
+      <div class="row col2">
+        <div><label class="f">필수 키워드 <span class="src">기계</span></label>
+          <p class="why"><b>원고에 반드시 들어가야 하는 말</b>이 있으면 넣어 주세요. 적어 두신 말이 원고에 있는지만 기계가 확인합니다.<br>가이드가 「필수 키워드」「반드시 포함」이라고 못 박은 것만 넣으시면 됩니다. 그 회차에서 다루는 기능 이름이라고 해서 꼭 필수 키워드인 것은 아닙니다.</p>
+          <input type="text" id="mKeys" placeholder="예) 딥배리어, 마이크로수분캡슐">
+          <div class="hint">쉼표로 구분해 주세요.</div></div>
+        <div><label class="f">타깃 설명 <span class="src ai">AI</span></label>
+          <p class="why">AI가 타깃을 좁게 넘겨짚어 엉뚱한 지적을 하는 걸 막아 줍니다. "20대"만 적으면 30대 이야기를 문제 삼기도 합니다.</p>
+          <input type="text" id="mTarget" placeholder="예) 20대 후반~30대 초반 직장인. 환절기 속건조로 고민하는 층"></div>
+      </div>
+      <div class="row">
+        <div><label class="f">이번 회차 추가 요청 <span class="src ai">AI</span></label>
+          <p class="why">가이드에 콘텐츠별로 붙는 세부 요청을 적어 주세요. "왜 이 제품을 골랐는지 더 들어가면 좋겠다" 같은 내용입니다.</p>
+          <textarea id="mNote" placeholder="예) 좋았다는 감상만 나열하는 내용은 지양, 본인 피부 고민과 연결된 사용기 중심"></textarea></div>
+      </div>
+    </div>
+  </div></div>
+
+</div></div></section>
+
+<section class="panel" id="p-ai">
+  <div class="sheet"><div class="shead"><span class="snum">AI</span><div class="stitle">
+    <h2>AI 검수 설정</h2><p>기계가 못 잡는 것 — 맞춤법, 주제 부합, 리스크 표현, 말투 — 을 맡깁니다. 실행은 검수 화면에서 이뤄집니다.</p>
+  </div></div><div class="sbody">
+    <div class="field">
+      <label class="f">방식</label>
+      <div class="mode" id="aiMode" style="margin:10px 0 18px">
+        <button data-m="key" class="on">키 넣고 자동</button><button data-m="copy">프롬프트 복사</button>
+      </div>
+      <div class="warn">
+        <b>전송되는 내용:</b> 원고 전문 · 가이드 파일 전문 · 캠페인 설정(제품명, 해시태그, 필수 고지 문구, 참고 자료) · 회차 정보.
+        즉 이 도구에 입력하신 <b>거의 모든 내용이 함께 나갑니다.</b><br><br>
+        전송 여부와 그에 따른 <b>책임은 사용자 본인에게 있습니다.</b> 사용 전 소속 회사의 보안 규정, 클라이언트와의 비밀유지 계약,
+        해당 AI 서비스의 데이터 처리 정책을 반드시 확인해 주세요. 미공개 제품 정보나 클라이언트 자료가 포함되어 있다면 전송하지 마십시오.
+        <span id="copyWarn" style="display:none"><br><br>복사한 프롬프트에도 위 내용이 그대로 담깁니다. <b>복사 후에는 도구가 관여할 수 없습니다.</b>
+        회사에서 승인한 AI인지 확인하신 뒤 사용해 주세요.</span>
+      </div>
+    </div>
+    <div class="field" id="aiKeyBox">
+      <div class="row">
+        <div><label class="f">제공사</label>
+          <select id="aiProv"><option value="anthropic">Anthropic (Claude)</option><option value="openai">OpenAI</option>
+          <option value="gemini">Google Gemini</option><option value="custom">직접 입력 (OpenAI 호환)</option></select>
+          <div class="hint">제공사만 고르시면 기본 모델로 돌아갑니다. 모델을 직접 지정하고 싶을 때만 아래를 펼쳐 주세요.</div></div>
+      </div>
+      <div class="warn" style="margin-bottom:18px">
+        <b>보내는 글이 깁니다.</b> 원고 전문 · 가이드 전문 · 설정을 한 번에 보내기 때문에, 요청당 글자 수가 많습니다.
+        <b>무료 등급</b>(예: 무료로 쓰는 Gemini)은 길이 제한이나 사용량 제한에 자주 걸려 오류가 납니다.
+        유료로 구독 중인 AI가 있다면 위 「방식 · 프롬프트 복사」로 그 서비스 화면에 직접 붙여 넣는 편이 안정적입니다.
+      </div>
+      <details class="dict" style="margin-bottom:20px"><summary>모델 직접 지정</summary>
+        <input type="text" id="aiModel" placeholder="비워 두시면 기본 모델을 씁니다" class="mt12">
+        <div class="hint">API 키로는 모델이 정해지지 않습니다. 특정 모델을 쓰셔야 할 때만 이름을 넣어 주세요.</div>
+      </details>
+      <div class="row" id="aiUrlRow" style="display:none">
+        <div><label class="f">엔드포인트 주소</label><input type="text" id="aiUrl" placeholder="예) https://내부게이트웨이주소/v1/chat/completions"></div>
+      </div>
+      <div class="row"><div><label class="f">API 키</label><input type="password" id="aiKey" placeholder="각자 발급하신 키를 넣어 주세요">
+        <div class="hint">파일을 다른 분께 전달하셔도, 설정 파일을 내보내셔도 <b>키는 따라가지 않습니다.</b></div>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--ink2);cursor:pointer">
+          <input type="checkbox" id="aiNoSave"> 이 브라우저에 키를 저장하지 않기</label>
+        <div class="hint">켜 두시면 창을 닫을 때 키가 지워집니다. <b>회사 보안 규정상 키를 기기에 남길 수 없을 때</b> 쓰세요.
+          대신 다시 여실 때마다 키를 넣으셔야 합니다.</div></div></div>
+    </div>
+    <div class="field"><label class="f">AI에게 맡길 항목</label><div id="aiTasks"></div></div>
+  </div></div>
+</section>
+
+<section class="panel" id="p-rev">
+  <div class="sheet"><div class="shead"><span class="snum">01</span><div class="stitle">
+    <h2>검수 기준</h2><p>어느 플랫폼 기준으로 볼지 먼저 정합니다. 글자 수 · 이미지 수 · 광고 고지 기준이 여기서 결정됩니다.</p>
+  </div></div><div class="sbody">
+    <div class="field" style="margin:0">
+      <label class="f">검수 기준 플랫폼</label>
+      <p class="why"><b>파일 형식과는 관계없습니다.</b> 목록은 <b>설정 → 04 캠페인 설정 → 플랫폼</b>에서 직접 만드신 것입니다.</p>
+      <select id="plSel"><option value="">— 고르세요 —</option></select>
+    </div>
+  </div></div>
+
+  <div class="sheet"><div class="shead"><span class="snum">02</span><div class="stitle">
+    <h2>원고 올리기</h2><p>워드 · 파워포인트 · 엑셀을 읽습니다.</p>
+  </div></div><div class="sbody">
+    <div class="drop" id="drop">
+      <iconify-icon icon="solar:cloud-upload-linear"></iconify-icon>
+      <b>파일을 끌어다 놓거나 눌러서 선택해 주세요</b>
+      <small>.docx · .pptx · .xlsx — 규칙 검수는 인터넷 없이 이 브라우저 안에서 끝납니다</small>
+      <input type="file" id="file" accept=".docx,.pptx,.xlsx" hidden></div>
+    <div id="fileMsg"></div>
+  </div></div>
+  <div class="sheet" id="blockCard" style="display:none"><div class="shead"><span class="snum">03</span><div class="stitle">
+    <h2>본문 지정</h2><p>글자 수를 셀 대상입니다. 가장 그럴듯한 것을 골라 두었으니 다르면 눌러서 바꿔 주세요.<br>여러 명의 원고가 한 파일에 있으면 오른쪽 목록에서 <b>작성자도 지정하실 수 있습니다.</b></p>
+  </div></div><div class="sbody">
+    <div id="blockHead"></div>
+    <div class="blocks" id="blocks"></div>
+    <div id="runWhy" style="margin-top:24px"></div>
+    <div class="btnrow"><button class="btn red" id="run">검수 실행</button>
+      <span class="hint" id="runHint" style="margin:0"></span></div>
+  </div></div>
+  <div id="result"></div>
+</section>
+
+<section class="panel" id="p-his">
+  <div class="sheet"><div class="shead"><span class="snum">01</span><div class="stitle">
+    <h2>검수 이력</h2><p>검수하실 때마다 한 줄씩 쌓입니다. CSV로 내보내면 엑셀에서 열립니다.</p>
+  </div></div><div class="sbody" style="padding:22px 30px">
+    <div id="histBox"></div>
+    <div class="btnrow" style="margin-top:20px"><button class="btn ghost sm" id="csvOut">CSV 내보내기</button>
+      <button class="btn ghost sm" id="csvClear">이력 비우기</button></div>
+  </div></div>
+</section>
+</main>
+
+<!--FOOTER-->
